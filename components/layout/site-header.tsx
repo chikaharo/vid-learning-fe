@@ -2,14 +2,43 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 import {
   AUTH_EVENT,
+  USER_KEY,
   clearSession,
-  getStoredUser,
   type StoredUser,
 } from "@/lib/session";
+
+function subscribeToSession(callback: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+  const handleStorage = (event: StorageEvent) => {
+    if (!event.key || event.key.startsWith("vu:")) {
+      callback();
+    }
+  };
+  const handleAuthChange = () => callback();
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(AUTH_EVENT, handleAuthChange);
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(AUTH_EVENT, handleAuthChange);
+  };
+}
+
+function getClientSnapshot() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return window.localStorage.getItem(USER_KEY);
+}
+
+function getServerSnapshot(): string | null {
+  return null;
+}
 
 const navigation = [
   { href: "/courses", label: "Courses" },
@@ -18,35 +47,24 @@ const navigation = [
 
 export function SiteHeader() {
   const router = useRouter();
-  const [user, setUser] = useState<StoredUser | null>(() => {
-    if (typeof window === "undefined") {
+  const userString = useSyncExternalStore(
+    subscribeToSession,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const user = useMemo<StoredUser | null>(() => {
+    if (!userString) {
       return null;
     }
-    return getStoredUser();
-  });
-
-  useEffect(() => {
-    function handleStorage(event: StorageEvent) {
-      if (!event.key || event.key.startsWith("vu:")) {
-        setUser(getStoredUser());
-      }
+    try {
+      return JSON.parse(userString) as StoredUser;
+    } catch {
+      return null;
     }
-
-    function handleAuthChange() {
-      setUser(getStoredUser());
-    }
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener(AUTH_EVENT, handleAuthChange);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener(AUTH_EVENT, handleAuthChange);
-    };
-  }, []);
+  }, [userString]);
 
   function handleSignOut() {
     clearSession();
-    setUser(null);
     router.push("/");
   }
 

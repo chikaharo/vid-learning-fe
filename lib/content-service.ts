@@ -5,7 +5,13 @@ import {
   testimonials,
   categories as mockCategories,
 } from "@/data/mock-data";
-import type { Course, Enrollment, Testimonial } from "@/types/course";
+import type {
+	Course,
+	Enrollment,
+	Lesson,
+	Quiz,
+	Testimonial,
+} from "@/types/course";
 import { fetchFromApi } from "./api";
 
 export interface ApiCourse {
@@ -26,6 +32,30 @@ export interface ApiCourse {
     bio?: string;
   };
   metadata?: Record<string, unknown>;
+}
+
+interface ApiLesson {
+  id: string;
+  title: string;
+  order?: number;
+  durationMinutes?: number;
+  isPreview?: boolean;
+  courseId: string;
+  moduleId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface ApiQuiz {
+  id: string;
+  title: string;
+  description?: string;
+  timeLimitSeconds?: number;
+  isPublished: boolean;
+  courseId: string;
+  lessonId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const MOCK_METRICS = {
@@ -102,6 +132,44 @@ export function transformCourse(apiCourse: ApiCourse): Course {
   };
 }
 
+function transformLesson(apiLesson: ApiLesson): Lesson {
+  return {
+    id: apiLesson.id,
+    title: apiLesson.title,
+    durationMinutes: apiLesson.durationMinutes ?? 0,
+    isPreview: apiLesson.isPreview ?? false,
+    order: apiLesson.order ?? 0,
+    courseId: apiLesson.courseId,
+    moduleId: apiLesson.moduleId ?? null,
+    createdAt:
+      apiLesson.createdAt ??
+      new Date().toISOString(),
+    updatedAt:
+      apiLesson.updatedAt ??
+      apiLesson.createdAt ??
+      new Date().toISOString(),
+  };
+}
+
+function transformQuiz(apiQuiz: ApiQuiz): Quiz {
+  return {
+    id: apiQuiz.id,
+    title: apiQuiz.title,
+    description: apiQuiz.description,
+    timeLimitSeconds: apiQuiz.timeLimitSeconds,
+    isPublished: apiQuiz.isPublished ?? false,
+    courseId: apiQuiz.courseId,
+    lessonId: apiQuiz.lessonId ?? null,
+    createdAt:
+      apiQuiz.createdAt ??
+      new Date().toISOString(),
+    updatedAt:
+      apiQuiz.updatedAt ??
+      apiQuiz.createdAt ??
+      new Date().toISOString(),
+  };
+}
+
 export interface CoursePayload {
   title: string;
   slug: string;
@@ -117,6 +185,27 @@ export interface CoursePayload {
 export type CourseUpdatePayload = Partial<Omit<CoursePayload, "instructorId">> & {
   instructorId?: string;
 };
+
+export interface LessonPayload {
+  title: string;
+  courseId: string;
+  durationMinutes?: number;
+  order?: number;
+  isPreview?: boolean;
+  moduleId?: string;
+}
+
+export interface QuizPayload {
+  title: string;
+  courseId: string;
+  description?: string;
+  lessonId?: string;
+  timeLimitSeconds?: number;
+  isPublished?: boolean;
+}
+
+export type LessonUpdatePayload = Partial<LessonPayload>;
+export type QuizUpdatePayload = Partial<QuizPayload>;
 
 export async function createCourse(payload: CoursePayload): Promise<Course> {
   const apiCourse = await fetchFromApi<ApiCourse>(
@@ -162,6 +251,152 @@ export async function deleteCourse(id: string): Promise<void> {
     },
     { fallbackToMock: false, auth: true },
   );
+}
+
+export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
+  if (!courseId) {
+    return [];
+  }
+  const apiLessons = await fetchFromApi<ApiLesson[]>(
+    `/lessons/course/${courseId}`,
+    { cache: "no-store" },
+    { fallbackToMock: false },
+  );
+  if (!apiLessons || !apiLessons.length) {
+    return [];
+  }
+  return apiLessons.map(transformLesson);
+}
+
+export async function createLesson(payload: LessonPayload): Promise<Lesson> {
+  const apiLesson = await fetchFromApi<ApiLesson>(
+    "/lessons",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    },
+    { fallbackToMock: false, auth: true },
+  );
+  if (!apiLesson) {
+    throw new Error("Lesson API returned an empty response.");
+  }
+  return transformLesson(apiLesson);
+}
+
+export async function deleteLesson(id: string): Promise<void> {
+  await fetchFromApi<null>(
+    `/lessons/${id}`,
+    {
+      method: "DELETE",
+      cache: "no-store",
+    },
+    { fallbackToMock: false, auth: true },
+  );
+}
+
+export async function updateLesson(
+  id: string,
+  payload: LessonUpdatePayload,
+): Promise<Lesson> {
+  const apiLesson = await fetchFromApi<ApiLesson>(
+    `/lessons/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    },
+    { fallbackToMock: false, auth: true },
+  );
+  if (!apiLesson) {
+    throw new Error("Lesson update returned an empty response.");
+  }
+  return transformLesson(apiLesson);
+}
+
+export async function getLesson(id: string): Promise<Lesson | null> {
+  if (!id) {
+    return null;
+  }
+  const apiLesson = await fetchFromApi<ApiLesson>(
+    `/lessons/${id}`,
+    { cache: "no-store" },
+    { fallbackToMock: false },
+  );
+  return apiLesson ? transformLesson(apiLesson) : null;
+}
+
+export async function getQuizzesForCourse(courseId: string): Promise<Quiz[]> {
+  if (!courseId) {
+    return [];
+  }
+  const apiQuizzes = await fetchFromApi<ApiQuiz[]>(
+    `/quizzes/course/${courseId}`,
+    { cache: "no-store" },
+    { fallbackToMock: false },
+  );
+  if (!apiQuizzes || !apiQuizzes.length) {
+    return [];
+  }
+  return apiQuizzes.map(transformQuiz);
+}
+
+export async function createQuiz(payload: QuizPayload): Promise<Quiz> {
+  const apiQuiz = await fetchFromApi<ApiQuiz>(
+    "/quizzes",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    },
+    { fallbackToMock: false, auth: true },
+  );
+  if (!apiQuiz) {
+    throw new Error("Quiz API returned an empty response.");
+  }
+  return transformQuiz(apiQuiz);
+}
+
+export async function deleteQuiz(id: string): Promise<void> {
+  await fetchFromApi<null>(
+    `/quizzes/${id}`,
+    {
+      method: "DELETE",
+      cache: "no-store",
+    },
+    { fallbackToMock: false, auth: true },
+  );
+}
+
+export async function updateQuiz(
+  id: string,
+  payload: QuizUpdatePayload,
+): Promise<Quiz> {
+  const apiQuiz = await fetchFromApi<ApiQuiz>(
+    `/quizzes/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    },
+    { fallbackToMock: false, auth: true },
+  );
+  if (!apiQuiz) {
+    throw new Error("Quiz update returned an empty response.");
+  }
+  return transformQuiz(apiQuiz);
+}
+
+export async function getQuiz(id: string): Promise<Quiz | null> {
+  if (!id) {
+    return null;
+  }
+  const apiQuiz = await fetchFromApi<ApiQuiz>(
+    `/quizzes/${id}`,
+    { cache: "no-store" },
+    { fallbackToMock: false },
+  );
+  return apiQuiz ? transformQuiz(apiQuiz) : null;
 }
 
 export async function fetchLiveCourses(): Promise<Course[]> {

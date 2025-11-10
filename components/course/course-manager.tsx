@@ -8,14 +8,22 @@ import {
 	type FormEvent,
 } from "react";
 
-import type { Course } from "@/types/course";
+import type { Course, Lesson, Quiz } from "@/types/course";
 import {
 	createCourse,
 	deleteCourse,
+	createLesson,
+	createQuiz,
 	fetchLiveCourses,
+	getLessonsForCourse,
+	getQuizzesForCourse,
 	updateCourse,
+	deleteLesson,
+	deleteQuiz,
 	type CoursePayload,
 	type CourseUpdatePayload,
+	type LessonPayload,
+	type QuizPayload,
 } from "@/lib/content-service";
 import { AUTH_EVENT, getStoredUser, type StoredUser } from "@/lib/session";
 
@@ -34,6 +42,21 @@ interface CourseFormState {
 	thumbnailUrl: string;
 }
 
+interface LessonFormState {
+	title: string;
+	durationMinutes: string;
+	order: string;
+	isPreview: boolean;
+}
+
+interface QuizFormState {
+	title: string;
+	description: string;
+	timeLimitSeconds: string;
+	isPublished: boolean;
+	lessonId: string;
+}
+
 type Status = { type: "success" | "error" | "info"; message: string } | null;
 
 const emptyForm: CourseFormState = {
@@ -45,6 +68,21 @@ const emptyForm: CourseFormState = {
 	isPublished: false,
 	tags: "",
 	thumbnailUrl: "",
+};
+
+const emptyLessonForm: LessonFormState = {
+	title: "",
+	durationMinutes: "5",
+	order: "0",
+	isPreview: false,
+};
+
+const emptyQuizForm: QuizFormState = {
+	title: "",
+	description: "",
+	timeLimitSeconds: "300",
+	isPublished: false,
+	lessonId: "",
 };
 
 function courseToFormState(course: Course): CourseFormState {
@@ -60,6 +98,26 @@ function courseToFormState(course: Course): CourseFormState {
 	};
 }
 
+function sortLessons(list: Lesson[]) {
+	return [...list].sort((a, b) => {
+		const orderDiff = (a.order ?? 0) - (b.order ?? 0);
+		if (orderDiff !== 0) {
+			return orderDiff;
+		}
+		const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+		const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+		return aTime - bTime;
+	});
+}
+
+function sortQuizzes(list: Quiz[]) {
+	return [...list].sort((a, b) => {
+		const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+		const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+		return bTime - aTime;
+	});
+}
+
 export function CourseManager({ initialCourses }: CourseManagerProps) {
 	const [courses, setCourses] = useState<Course[]>(initialCourses);
 	const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
@@ -68,6 +126,16 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const [lessons, setLessons] = useState<Lesson[]>([]);
+	const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+	const [lessonsLoading, setLessonsLoading] = useState(false);
+	const [quizzesLoading, setQuizzesLoading] = useState(false);
+	const [lessonSubmitting, setLessonSubmitting] = useState(false);
+	const [quizSubmitting, setQuizSubmitting] = useState(false);
+	const [lessonDeletingId, setLessonDeletingId] = useState<string | null>(null);
+	const [quizDeletingId, setQuizDeletingId] = useState<string | null>(null);
+	const [lessonForm, setLessonForm] = useState<LessonFormState>(emptyLessonForm);
+	const [quizForm, setQuizForm] = useState<QuizFormState>(emptyQuizForm);
 	const [user, setUser] = useState<StoredUser | null>(() =>
 		typeof window === "undefined" ? null : getStoredUser()
 	);
@@ -79,6 +147,14 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 
 	useEffect(() => {
 		setForm(selectedCourse ? courseToFormState(selectedCourse) : emptyForm);
+		if (!selectedCourse) {
+			setLessons([]);
+			setQuizzes([]);
+			setLessonForm(emptyLessonForm);
+			setQuizForm(emptyQuizForm);
+			setLessonsLoading(false);
+			setQuizzesLoading(false);
+		}
 	}, [selectedCourse]);
 
 	useEffect(() => {
@@ -92,6 +168,55 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			window.removeEventListener(AUTH_EVENT, syncUser);
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!selectedCourseId) {
+			return;
+		}
+		let ignore = false;
+		setLessonsLoading(true);
+		setQuizzesLoading(true);
+		Promise.all([
+			getLessonsForCourse(selectedCourseId),
+			getQuizzesForCourse(selectedCourseId),
+		])
+			.then(([lessonData, quizData]) => {
+				if (ignore) return;
+				setLessons(sortLessons(lessonData));
+				setQuizzes(sortQuizzes(quizData));
+			})
+			.catch((error) => {
+				if (ignore) return;
+				setStatus({
+					type: "error",
+					message:
+						error instanceof Error
+							? error.message
+							: "Unable to load lessons/quizzes for this course.",
+				});
+			})
+			.finally(() => {
+				if (ignore) return;
+				setLessonsLoading(false);
+				setQuizzesLoading(false);
+			});
+
+		return () => {
+			ignore = true;
+		};
+	}, [selectedCourseId]);
+
+	useEffect(() => {
+		setQuizForm((prev) => {
+			if (!prev.lessonId) {
+				return prev;
+			}
+			if (lessons.find((lesson) => lesson.id === prev.lessonId)) {
+				return prev;
+			}
+			return { ...prev, lessonId: "" };
+		});
+	}, [lessons]);
 
 	const sortedCourses = useMemo(() => {
 		return [...courses].sort((a, b) => {
@@ -114,6 +239,34 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 					? (event.target as HTMLInputElement).checked
 					: event.target.value;
 			setForm((prev) => ({ ...prev, [field]: value }));
+		};
+	}
+
+	function updateLessonField(
+		field: keyof LessonFormState
+	): (
+		event: ChangeEvent<HTMLInputElement>
+	) => void {
+		return (event) => {
+			const value =
+				event.target.type === "checkbox"
+					? (event.target as HTMLInputElement).checked
+					: event.target.value;
+			setLessonForm((prev) => ({ ...prev, [field]: value }));
+		};
+	}
+
+	function updateQuizField(
+		field: keyof QuizFormState
+	): (
+		event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+	) => void {
+		return (event) => {
+			const value =
+				event.target.type === "checkbox"
+					? (event.target as HTMLInputElement).checked
+					: event.target.value;
+			setQuizForm((prev) => ({ ...prev, [field]: value }));
 		};
 	}
 
@@ -226,6 +379,157 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			});
 		} finally {
 			setDeletingId(null);
+		}
+	}
+
+	async function handleLessonSubmit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		if (!selectedCourseId) {
+			setStatus({
+				type: "error",
+				message: "Select a course before adding lessons.",
+			});
+			return;
+		}
+		if (!user) {
+			setStatus({
+				type: "error",
+				message: "Sign in to add lessons.",
+			});
+			return;
+		}
+		if (!lessonForm.title.trim()) {
+			setStatus({
+				type: "error",
+				message: "Lesson title is required.",
+			});
+			return;
+		}
+
+		const payload: LessonPayload = {
+			title: lessonForm.title.trim(),
+			courseId: selectedCourseId,
+			durationMinutes: Number(lessonForm.durationMinutes) || 5,
+			order: Number(lessonForm.order) || 0,
+			isPreview: lessonForm.isPreview,
+		};
+
+		setLessonSubmitting(true);
+		try {
+			const created = await createLesson(payload);
+			setLessons((prev) => sortLessons([...prev, created]));
+			setLessonForm(emptyLessonForm);
+			setStatus({
+				type: "success",
+				message: "Lesson added to course.",
+			});
+		} catch (error) {
+			setStatus({
+				type: "error",
+				message:
+					error instanceof Error ? error.message : "Unable to add lesson.",
+			});
+		} finally {
+			setLessonSubmitting(false);
+		}
+	}
+
+	async function handleLessonDelete(id: string) {
+		if (!window.confirm("Delete this lesson permanently?")) {
+			return;
+		}
+		setLessonDeletingId(id);
+		try {
+			await deleteLesson(id);
+			setLessons((prev) => prev.filter((lesson) => lesson.id !== id));
+			setStatus({
+				type: "success",
+				message: "Lesson deleted.",
+			});
+		} catch (error) {
+			setStatus({
+				type: "error",
+				message:
+					error instanceof Error ? error.message : "Unable to delete lesson.",
+			});
+		} finally {
+			setLessonDeletingId(null);
+		}
+	}
+
+	async function handleQuizSubmit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		if (!selectedCourseId) {
+			setStatus({
+				type: "error",
+				message: "Select a course before adding quizzes.",
+			});
+			return;
+		}
+		if (!user) {
+			setStatus({
+				type: "error",
+				message: "Sign in to add quizzes.",
+			});
+			return;
+		}
+		if (!quizForm.title.trim()) {
+			setStatus({
+				type: "error",
+				message: "Quiz title is required.",
+			});
+			return;
+		}
+
+		const payload: QuizPayload = {
+			title: quizForm.title.trim(),
+			courseId: selectedCourseId,
+			description: quizForm.description.trim() || undefined,
+			lessonId: quizForm.lessonId || undefined,
+			timeLimitSeconds: Number(quizForm.timeLimitSeconds) || undefined,
+			isPublished: quizForm.isPublished,
+		};
+
+		setQuizSubmitting(true);
+		try {
+			const created = await createQuiz(payload);
+			setQuizzes((prev) => sortQuizzes([created, ...prev]));
+			setQuizForm(emptyQuizForm);
+			setStatus({
+				type: "success",
+				message: "Quiz created.",
+			});
+		} catch (error) {
+			setStatus({
+				type: "error",
+				message:
+					error instanceof Error ? error.message : "Unable to create quiz.",
+			});
+		} finally {
+			setQuizSubmitting(false);
+		}
+	}
+
+	async function handleQuizDelete(id: string) {
+		if (!window.confirm("Delete this quiz permanently?")) {
+			return;
+		}
+		setQuizDeletingId(id);
+		try {
+			await deleteQuiz(id);
+			setQuizzes((prev) => prev.filter((quiz) => quiz.id !== id));
+			setStatus({
+				type: "success",
+				message: "Quiz deleted.",
+			});
+		} catch (error) {
+			setStatus({
+				type: "error",
+				message:
+					error instanceof Error ? error.message : "Unable to delete quiz.",
+			});
+		} finally {
+			setQuizDeletingId(null);
 		}
 	}
 
@@ -498,6 +802,246 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 					</form>
 				</section>
 			</div>
+
+			{!selectedCourse && (
+				<div className="rounded-3xl border border-dashed border-zinc-200 bg-white px-6 py-5 text-sm text-zinc-500">
+					Select a course to manage its lessons and quizzes.
+				</div>
+			)}
+
+			{selectedCourse && (
+				<div className="grid gap-6 lg:grid-cols-2">
+					<section className="rounded-3xl border border-zinc-200 bg-white p-6">
+						<header className="space-y-1">
+							<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+								Lessons · {lessons.length}
+							</p>
+							<h3 className="text-xl font-semibold text-zinc-900">
+								Curriculum builder
+							</h3>
+						</header>
+						<div className="mt-4 space-y-2">
+							{lessonsLoading ? (
+								<p className="text-sm text-zinc-500">Loading lessons…</p>
+							) : lessons.length === 0 ? (
+								<p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-500">
+									No lessons yet. Use the form below to add the first one.
+								</p>
+							) : (
+								<ul className="space-y-2">
+									{lessons.map((lesson) => (
+										<li
+											key={lesson.id}
+											className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-2"
+										>
+											<div>
+												<p className="text-sm font-semibold text-zinc-900">
+													#{lesson.order ?? 0} · {lesson.title}
+												</p>
+												<p className="text-xs uppercase tracking-wide text-zinc-500">
+													{lesson.durationMinutes} min ·{" "}
+													{lesson.isPreview ? "Preview" : "Locked"}
+												</p>
+											</div>
+											<button
+												type="button"
+												onClick={() => handleLessonDelete(lesson.id)}
+												disabled={
+													disableMutations || lessonDeletingId === lesson.id
+												}
+												className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+											>
+												{lessonDeletingId === lesson.id ? "Deleting…" : "Remove"}
+											</button>
+										</li>
+									))}
+								</ul>
+							)}
+						</div>
+						<form className="mt-6 space-y-4" onSubmit={handleLessonSubmit}>
+							<label className="block">
+								<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+									Title
+								</span>
+								<input
+									type="text"
+									value={lessonForm.title}
+									onChange={updateLessonField("title")}
+									placeholder="Design systems for discovery"
+									className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+								/>
+							</label>
+							<div className="grid gap-4 md:grid-cols-2">
+								<label className="block">
+									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+										Duration (minutes)
+									</span>
+									<input
+										type="number"
+										min={1}
+										value={lessonForm.durationMinutes}
+										onChange={updateLessonField("durationMinutes")}
+										className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+									/>
+								</label>
+								<label className="block">
+									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+										Display order
+									</span>
+									<input
+										type="number"
+										min={0}
+										value={lessonForm.order}
+										onChange={updateLessonField("order")}
+										className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+									/>
+								</label>
+							</div>
+							<label className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700">
+								<input
+									type="checkbox"
+									checked={lessonForm.isPreview}
+									onChange={updateLessonField("isPreview")}
+									className="h-4 w-4 rounded border-zinc-300 text-violet-600"
+								/>
+								Mark as preview lesson
+							</label>
+							<button
+								type="submit"
+								disabled={disableMutations || lessonSubmitting}
+								className="w-full rounded-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+							>
+								{lessonSubmitting ? "Adding lesson…" : "Add lesson"}
+							</button>
+						</form>
+					</section>
+
+					<section className="rounded-3xl border border-zinc-200 bg-white p-6">
+						<header className="space-y-1">
+							<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+								Quizzes · {quizzes.length}
+							</p>
+							<h3 className="text-xl font-semibold text-zinc-900">
+								Assess learner progress
+							</h3>
+						</header>
+						<div className="mt-4 space-y-2">
+							{quizzesLoading ? (
+								<p className="text-sm text-zinc-500">Loading quizzes…</p>
+							) : quizzes.length === 0 ? (
+								<p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-500">
+									No quizzes yet. Keep learners engaged with a quick assessment.
+								</p>
+							) : (
+								<ul className="space-y-2">
+									{quizzes.map((quiz) => (
+										<li
+											key={quiz.id}
+											className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-2"
+										>
+											<div>
+												<p className="text-sm font-semibold text-zinc-900">
+													{quiz.title}
+												</p>
+												<p className="text-xs uppercase tracking-wide text-zinc-500">
+													{quiz.isPublished ? "Published" : "Draft"} ·{" "}
+													{quiz.timeLimitSeconds
+														? `${Math.round(
+																quiz.timeLimitSeconds / 60
+														  )} min limit`
+														: "No timer"}
+												</p>
+											</div>
+											<button
+												type="button"
+												onClick={() => handleQuizDelete(quiz.id)}
+												disabled={disableMutations || quizDeletingId === quiz.id}
+												className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+											>
+												{quizDeletingId === quiz.id ? "Deleting…" : "Remove"}
+											</button>
+										</li>
+									))}
+								</ul>
+							)}
+						</div>
+						<form className="mt-6 space-y-4" onSubmit={handleQuizSubmit}>
+							<label className="block">
+								<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+									Title
+								</span>
+								<input
+									type="text"
+									value={quizForm.title}
+									onChange={updateQuizField("title")}
+									placeholder="Module checkpoint quiz"
+									className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+								/>
+							</label>
+							<label className="block">
+								<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+									Description
+								</span>
+								<textarea
+									value={quizForm.description}
+									onChange={updateQuizField("description")}
+									rows={3}
+									placeholder="Short note about what this quiz covers."
+									className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+								/>
+							</label>
+							<div className="grid gap-4 md:grid-cols-2">
+								<label className="block">
+									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+										Time limit (seconds)
+									</span>
+									<input
+										type="number"
+										min={60}
+										step={30}
+										value={quizForm.timeLimitSeconds}
+										onChange={updateQuizField("timeLimitSeconds")}
+										className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+									/>
+								</label>
+								<label className="block">
+									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+										Linked lesson (optional)
+									</span>
+									<select
+										value={quizForm.lessonId}
+										onChange={updateQuizField("lessonId")}
+										className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+									>
+										<option value="">Entire course</option>
+										{lessons.map((lesson) => (
+											<option key={lesson.id} value={lesson.id}>
+												#{lesson.order ?? 0} · {lesson.title}
+											</option>
+										))}
+									</select>
+								</label>
+							</div>
+							<label className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700">
+								<input
+									type="checkbox"
+									checked={quizForm.isPublished}
+									onChange={updateQuizField("isPublished")}
+									className="h-4 w-4 rounded border-zinc-300 text-violet-600"
+								/>
+								Publish quiz immediately
+							</label>
+							<button
+								type="submit"
+								disabled={disableMutations || quizSubmitting}
+								className="w-full rounded-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+							>
+								{quizSubmitting ? "Creating quiz…" : "Create quiz"}
+							</button>
+						</form>
+					</section>
+				</div>
+			)}
 		</div>
 	);
 }
