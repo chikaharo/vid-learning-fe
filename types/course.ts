@@ -31,6 +31,7 @@ export interface Course {
   title: string;
   description: string;
   level: CourseLevel;
+  isPublished: boolean;
   durationMinutes: number;
   rating: number;
   ratingCount: number;
@@ -40,6 +41,7 @@ export interface Course {
   language: string;
   tags: string[];
   categories: string[];
+  thumbnailUrl?: string | null;
   thumbnailColor: string;
   updatedAt: string;
   instructor: Instructor;

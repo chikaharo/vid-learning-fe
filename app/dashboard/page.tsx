@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { EnrollmentCard } from "@/components/dashboard/enrollment-card";
 import { CourseCard } from "@/components/course/course-card";
 import {
@@ -25,6 +27,14 @@ export default async function DashboardPage() {
         <p className="text-sm text-zinc-600">
           Resume where you left off, track progress, and explore new playlists.
         </p>
+        <div className="pt-2">
+          <Link
+            href="/dashboard/courses"
+            className="inline-flex items-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
+          >
+            Manage courses
+          </Link>
+        </div>
       </header>
 
       <section className="grid gap-6 lg:grid-cols-2">

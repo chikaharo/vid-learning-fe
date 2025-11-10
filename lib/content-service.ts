@@ -8,7 +8,7 @@ import {
 import type { Course, Enrollment, Testimonial } from "@/types/course";
 import { fetchFromApi } from "./api";
 
-interface ApiCourse {
+export interface ApiCourse {
   id: string;
   title: string;
   slug: string;
@@ -36,7 +36,7 @@ const MOCK_METRICS = {
 
 const currency = "USD";
 
-function transformCourse(apiCourse: ApiCourse): Course {
+export function transformCourse(apiCourse: ApiCourse): Course {
   const metadata = apiCourse.metadata ?? {};
   return {
     id: apiCourse.id,
@@ -47,6 +47,7 @@ function transformCourse(apiCourse: ApiCourse): Course {
       "Premium curriculum crafted for ambitious course creators.",
     level: apiCourse.level,
     categories: Array.isArray(apiCourse.tags) ? apiCourse.tags : [],
+    isPublished: apiCourse.isPublished ?? false,
     durationMinutes: apiCourse.durationMinutes ?? 0,
     tags: Array.isArray(apiCourse.tags) ? apiCourse.tags : [],
     rating: Number(metadata.rating) || MOCK_METRICS.rating,
@@ -55,6 +56,7 @@ function transformCourse(apiCourse: ApiCourse): Course {
     price: Number(metadata.price) || 19.99,
     currency,
     language: (metadata.language as string) ?? "English",
+    thumbnailUrl: apiCourse.thumbnailUrl ?? null,
     thumbnailColor:
       typeof apiCourse.thumbnailUrl === "string" && apiCourse.thumbnailUrl.length
         ? apiCourse.thumbnailUrl
@@ -98,6 +100,80 @@ function transformCourse(apiCourse: ApiCourse): Course {
     ],
     modules: [],
   };
+}
+
+export interface CoursePayload {
+  title: string;
+  slug: string;
+  description?: string;
+  level: Course["level"];
+  durationMinutes: number;
+  isPublished: boolean;
+  tags?: string[];
+  thumbnailUrl?: string;
+  instructorId: string;
+}
+
+export type CourseUpdatePayload = Partial<Omit<CoursePayload, "instructorId">> & {
+  instructorId?: string;
+};
+
+export async function createCourse(payload: CoursePayload): Promise<Course> {
+  const apiCourse = await fetchFromApi<ApiCourse>(
+    "/courses",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    },
+    { fallbackToMock: false, auth: true },
+  );
+  if (!apiCourse) {
+    throw new Error("Course API returned an empty response.");
+  }
+  return transformCourse(apiCourse);
+}
+
+export async function updateCourse(
+  id: string,
+  payload: CourseUpdatePayload,
+): Promise<Course> {
+  const apiCourse = await fetchFromApi<ApiCourse>(
+    `/courses/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    },
+    { fallbackToMock: false, auth: true },
+  );
+  if (!apiCourse) {
+    throw new Error("Course update returned an empty response.");
+  }
+  return transformCourse(apiCourse);
+}
+
+export async function deleteCourse(id: string): Promise<void> {
+  await fetchFromApi<null>(
+    `/courses/${id}`,
+    {
+      method: "DELETE",
+      cache: "no-store",
+    },
+    { fallbackToMock: false, auth: true },
+  );
+}
+
+export async function fetchLiveCourses(): Promise<Course[]> {
+  const apiCourses = await fetchFromApi<ApiCourse[]>(
+    "/courses",
+    { cache: "no-store" },
+    { fallbackToMock: false },
+  );
+  if (!apiCourses || !apiCourses.length) {
+    throw new Error("Unable to load courses from the API.");
+  }
+  return apiCourses.map(transformCourse);
 }
 
 export async function getAllCourses(): Promise<Course[]> {

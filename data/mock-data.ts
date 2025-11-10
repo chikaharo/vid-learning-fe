@@ -81,6 +81,7 @@ const createCourse = ({
     description:
       "Everything you need to plan, produce, and ship a premium video learning platform inspired by Udemy.",
     level,
+    isPublished: true,
     categories,
     durationMinutes,
     rating: 4.8,
@@ -90,6 +91,7 @@ const createCourse = ({
     currency: "USD",
     language: "English",
     tags: ["video", "learning", "frontend", "design"],
+    thumbnailUrl: null,
     thumbnailColor,
     updatedAt: "2025-01-04T00:00:00.000Z",
     instructor,
