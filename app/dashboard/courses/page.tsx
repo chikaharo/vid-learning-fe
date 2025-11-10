@@ -1,21 +1,13 @@
 import Link from "next/link";
 
-import { fetchLiveCourses, getAllCourses } from "@/lib/content-service";
+import { getAllCourses } from "@/lib/content-service";
 
 export const metadata = {
 	title: "Courses",
 };
 
 export default async function DashboardCoursesPage() {
-	let courses = await getAllCourses();
-	try {
-		const live = await fetchLiveCourses();
-		if (live.length) {
-			courses = live;
-		}
-	} catch (error) {
-		console.warn("Falling back to cached/mock courses for dashboard view", error);
-	}
+	const courses = await getAllCourses({ live: true });
 
 	return (
 		<div className="space-y-8">

@@ -4,6 +4,7 @@ import type {
   Enrollment,
   Instructor,
   Testimonial,
+  WishlistItem,
 } from "@/types/course";
 
 const instructors: Instructor[] = [
@@ -217,6 +218,8 @@ export const enrollments: Enrollment[] = [
     lastAccessed: "2024-12-29T18:40:00.000Z",
   },
 ];
+
+export const wishlistItems: WishlistItem[] = [];
 
 export const learningPaths = [
   {

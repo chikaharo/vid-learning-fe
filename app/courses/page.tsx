@@ -7,7 +7,7 @@ export const metadata = {
 
 export default async function CoursesPage() {
   const [courses, categories] = await Promise.all([
-    getAllCourses(),
+    getAllCourses({ live: true }),
     getCategories(),
   ]);
 

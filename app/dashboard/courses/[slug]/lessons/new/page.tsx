@@ -2,15 +2,35 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { LessonForm } from "@/components/course/lesson-form";
-import { getCourseBySlug } from "@/lib/content-service";
+import {
+	fetchLiveCourses,
+	getAllCourses,
+	getCourseBySlug,
+} from "@/lib/content-service";
 
 interface NewLessonPageProps {
 	params: Promise<{ slug: string }>;
 }
 
+export async function generateStaticParams() {
+	try {
+		const liveCourses = await fetchLiveCourses();
+		if (liveCourses.length) {
+			return liveCourses.map((course) => ({ slug: course.slug }));
+		}
+	} catch (error) {
+		console.warn(
+			"Dashboard lesson creation params falling back to cached courses",
+			error,
+		);
+	}
+	const fallbackCourses = await getAllCourses();
+	return fallbackCourses.map((course) => ({ slug: course.slug }));
+}
+
 export default async function NewLessonPage({ params }: NewLessonPageProps) {
 	const { slug } = await params;
-	const course = await getCourseBySlug(slug);
+	const course = await getCourseBySlug(slug, { preferLive: true });
 	if (!course) {
 		notFound();
 	}

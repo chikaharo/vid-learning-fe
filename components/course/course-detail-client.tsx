@@ -177,7 +177,9 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 						<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
 							Course overview
 						</p>
-						<h2 className="text-2xl font-semibold text-zinc-900">{course.title}</h2>
+						<h2 className="text-2xl font-semibold text-zinc-900">
+							{course.title}
+						</h2>
 						<p className="mt-2 text-sm text-zinc-600">{course.description}</p>
 					</div>
 					<dl className="grid gap-4 text-sm text-zinc-600 md:grid-cols-2">
@@ -237,7 +239,8 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 						<p className="text-sm text-zinc-500">Loading lessons…</p>
 					) : lessons.length === 0 ? (
 						<p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-sm text-zinc-500">
-							No lessons yet. Create the first lesson to kick off the curriculum.
+							No lessons yet. Create the first lesson to kick off the
+							curriculum.
 						</p>
 					) : (
 						<ul className="space-y-3">
@@ -253,6 +256,8 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 										<p className="text-xs uppercase tracking-wide text-zinc-500">
 											{lesson.durationMinutes ?? 0} min ·{" "}
 											{lesson.isPreview ? "Preview" : "Locked"}
+											{lesson.videoUrl ? " · Video ready" : ""}
+											{lesson.content ? " · Notes" : ""}
 										</p>
 									</div>
 									<div className="flex items-center gap-2">
@@ -265,7 +270,9 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 										<button
 											type="button"
 											onClick={() => handleLessonDelete(lesson.id)}
-											disabled={disableMutations || lessonDeletingId === lesson.id}
+											disabled={
+												disableMutations || lessonDeletingId === lesson.id
+											}
 											className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
 										>
 											{lessonDeletingId === lesson.id ? "Deleting…" : "Delete"}

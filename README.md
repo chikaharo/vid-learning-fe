@@ -50,6 +50,7 @@ If you need client-side routing support on S3/CloudFront, create an error docume
 - Update `NEXT_PUBLIC_API_URL` so the frontend fetches the same host/port as your NestJS server (`http://localhost:8080/api` in dev).
 - Toggle `NEXT_PUBLIC_USE_MOCK_DATA=false` to let `lib/content-service.ts` hit `/courses`, `/enrollments`, etc. Extend the mapping helpers if you add new fields to the API responses.
 - Authentication forms (`/login`, `/register`) now call `POST /auth/login` and `POST /users` directly. Successful logins cache the returned `user`, `accessToken`, `refreshToken`, and token expiry in `localStorage` (keys prefixed with `vu:`) before redirecting to `/dashboard`. Authenticated fetches automatically attach the bearer token, refresh via `POST /auth/refresh`, and sign the user out if the refresh token fails.
+- Lesson builder uploads hit `POST /lessons/video` (multipart). Uploaded files are served from `/uploads/lessons/*` by the NestJS server, so ensure it has write access to an `uploads/` directory and that the API host is reachable by learners for video playback.
 
 ## Deployment checklist for S3
 

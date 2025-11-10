@@ -32,7 +32,7 @@ export default async function CourseDetailPage({
 	params,
 }: CourseDetailPageProps) {
 	const { slug } = await params;
-	const course = await getCourseBySlug(slug);
+	const course = await getCourseBySlug(slug, { preferLive: true });
 
 	if (!course) {
 		notFound();

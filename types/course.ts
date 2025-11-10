@@ -22,6 +22,8 @@ export interface Lesson {
 	quizzes?: Quiz[];
 	createdAt?: string;
 	updatedAt?: string;
+	videoUrl?: string | null;
+	content?: string | null;
 }
 
 export interface CourseModule {
@@ -82,4 +84,12 @@ export interface Testimonial {
   learnerName: string;
   role: string;
   courseId: string;
+}
+
+export interface WishlistItem {
+  id: string;
+  userId: string;
+  courseId: string;
+  course?: Course;
+  createdAt?: string;
 }

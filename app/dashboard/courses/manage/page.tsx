@@ -6,7 +6,7 @@ export const metadata = {
 };
 
 export default async function CourseManagePage() {
-	const courses = await getAllCourses();
+	const courses = await getAllCourses({ live: true });
 
 	return (
 		<div className="space-y-8">

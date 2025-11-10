@@ -110,8 +110,10 @@ export async function fetchFromApi<T>(
   let hasRetried = false;
 
   const makeRequest = async (): Promise<T | null> => {
+    const isFormData =
+      typeof FormData !== "undefined" && init?.body instanceof FormData;
     let headers: HeadersInit = {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(init?.headers ?? {}),
     };
 
