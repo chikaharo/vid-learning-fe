@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Video University — Next.js Frontend
 
-## Getting Started
+Udemy-inspired video learning experience for the `vid-learning-api` NestJS backend. The UI mirrors course marketplaces: marketing homepage, catalog filters, detailed course pages, learner dashboard, and auth flows. Everything is Static Site Export (Next.js `output: "export"`) so you can ship the build straight to S3 + CloudFront.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 18+
+- pnpm 9/10 (project was bootstrapped with pnpm 10.13.1)
+- Backend: `pnpm install && pnpm run start:dev` inside `vid-learning-api`
+
+Copy `.env.example` → `.env.local` and adjust as needed:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Canonical URL for metadata (used at build time) |
+| `NEXT_PUBLIC_API_URL` | Points to the NestJS API, e.g. `http://localhost:8080/api` |
+| `NEXT_PUBLIC_USE_MOCK_DATA` | `true` keeps the static mock content, `false` attempts live API fetches (required for authenticated routes) |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm dev      # local development on http://localhost:3000
+pnpm lint     # eslint (app router aware)
+pnpm build    # next build && next export -> ./out
+```
 
-## Learn More
+Because the config uses `output: "export"`, `pnpm build` emits plain HTML/CSS/JS to `frontend/out`. Upload that folder to S3 or any static host:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm build
+aws s3 sync out s3://your-static-site-bucket --delete
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+If you need client-side routing support on S3/CloudFront, create an error document that points to `index.html`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project structure
 
-## Deploy on Vercel
+- `app/` – App Router routes for marketing pages, catalog, course detail, auth, and dashboard
+- `components/` – Reusable UI (catalog filters, curriculum blocks, enrollment cards)
+- `data/mock-data.ts` – Seed data powering the static experience; doubles as fallback if the API is offline
+- `lib/content-service.ts` – Data access functions that call the NestJS API when available and fall back to the mock data otherwise
+- `public/` – Static assets (instructor avatars)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Integrating with the NestJS backend
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Update `NEXT_PUBLIC_API_URL` so the frontend fetches the same host/port as your NestJS server (`http://localhost:8080/api` in dev).
+- Toggle `NEXT_PUBLIC_USE_MOCK_DATA=false` to let `lib/content-service.ts` hit `/courses`, `/enrollments`, etc. Extend the mapping helpers if you add new fields to the API responses.
+- Authentication forms (`/login`, `/register`) now call `POST /auth/login` and `POST /users` directly. Successful logins cache the returned `user`, `accessToken`, `refreshToken`, and token expiry in `localStorage` (keys prefixed with `vu:`) before redirecting to `/dashboard`. Authenticated fetches automatically attach the bearer token, refresh via `POST /auth/refresh`, and sign the user out if the refresh token fails.
+
+## Deployment checklist for S3
+
+1. `pnpm build` to generate `out/`
+2. Upload `out/` to S3 (or Netlify, Vercel static, etc.)
+3. Set CloudFront/S3 error document to `index.html` so client-side routing keeps working
+4. Configure HTTPS + CDN caching headers
+5. If you switch to live API data in production, remember to enable CORS for your S3/CloudFront domain in the NestJS app (`app/main.ts` already enables CORS globally)
+
+Enjoy building! The frontend now provides a polished scaffold for connecting every NestJS module (courses, enrollments, quizzes, videos) to a modern learner experience.

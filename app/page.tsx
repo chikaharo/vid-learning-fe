@@ -1,65 +1,150 @@
-import Image from "next/image";
+import { CourseCard } from "@/components/course/course-card";
+import {
+  getCategories,
+  getFeaturedCourses,
+  getLearningPaths,
+  getTestimonials,
+} from "@/lib/content-service";
+import Link from "next/link";
 
-export default function Home() {
+export default async function HomePage() {
+  const [featuredCourses, categoryList, testimonials, learningPaths] =
+    await Promise.all([
+      getFeaturedCourses(),
+      getCategories(),
+      getTestimonials(),
+      getLearningPaths(),
+    ]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="space-y-16">
+      <section className="rounded-3xl border border-zinc-200 bg-white p-10 shadow-xl">
+        <div className="flex flex-col gap-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">
+            Built for course marketplaces
           </p>
+          <h1 className="text-4xl font-semibold text-zinc-900 lg:text-5xl">
+            Launch a Udemy-quality experience with Next.js + NestJS.
+          </h1>
+          <p className="text-lg text-zinc-600 lg:w-3/4">
+            Market your catalog, enroll learners, and deliver binge-worthy video
+            lessons. This starter includes everything from discovery to
+            dashboards so you can plug into the NestJS backend immediately.
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/courses"
+              className="rounded-full bg-zinc-900 px-6 py-3 text-center font-medium text-white transition hover:bg-zinc-800"
+            >
+              Explore the catalog
+            </Link>
+            <Link
+              href="/dashboard"
+              className="rounded-full border border-zinc-300 px-6 py-3 text-center font-medium text-zinc-900 transition hover:border-zinc-900"
+            >
+              View learner dashboard
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
+          {[
+            { label: "Learners impacted", value: "52K+" },
+            { label: "Video hours", value: "90+" },
+            { label: "Instructor partners", value: "25" },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4"
+            >
+              <p className="text-3xl font-semibold text-zinc-900">
+                {item.value}
+              </p>
+              <p className="text-sm text-zinc-600">{item.label}</p>
+            </div>
+          ))}
         </div>
-      </main>
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-violet-600">
+              Browse categories
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-zinc-900">
+              Curated for builders and educators
+            </h2>
+          </div>
+          <Link
+            href="/courses"
+            className="hidden rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900 md:inline-flex"
+          >
+            View all courses
+          </Link>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-3">
+          {categoryList.map((category) => (
+            <span
+              key={category}
+              className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700"
+            >
+              {category}
+            </span>
+          ))}
+        </div>
+        <div className="mt-8 grid gap-6 md:grid-cols-3">
+          {featuredCourses.map((course) => (
+            <CourseCard key={course.id} course={course} />
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-8 lg:grid-cols-2">
+        {learningPaths.map((path) => (
+          <div
+            key={path.id}
+            className="rounded-3xl border border-zinc-200 bg-white p-8"
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">
+              Playbook
+            </p>
+            <h3 className="mt-2 text-2xl font-semibold text-zinc-900">
+              {path.title}
+            </h3>
+            <ol className="mt-6 space-y-4 text-sm text-zinc-600">
+              {path.steps.map((step, index) => (
+                <li key={step} className="flex gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white">
+                    {index + 1}
+                  </span>
+                  <p>{step}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
+        <div className="rounded-3xl border border-zinc-200 bg-white p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">
+            Learner stories
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold text-zinc-900">
+            Built for ambitious teams
+          </h3>
+          <div className="mt-6 space-y-6">
+            {testimonials.map((testimonial) => (
+              <blockquote
+                key={testimonial.id}
+                className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-sm text-zinc-700"
+              >
+                “{testimonial.quote}”
+                <footer className="mt-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  {testimonial.learnerName} · {testimonial.role}
+                </footer>
+              </blockquote>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
