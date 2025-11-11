@@ -28,8 +28,10 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 	const [status, setStatus] = useState<BannerStatus>(null);
 	const [isEnrolled, setIsEnrolled] = useState(false);
 	const [isWishlisted, setIsWishlisted] = useState(false);
+	const [hydrated, setHydrated] = useState(false);
 
 	useEffect(() => {
+		setHydrated(true);
 		if (typeof window === "undefined") return;
 		const syncUser = () => setUser(getStoredUser());
 		window.addEventListener("storage", syncUser);
@@ -96,7 +98,9 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 			setStatus({
 				type: "error",
 				message:
-					error instanceof Error ? error.message : "Unable to enroll right now.",
+					error instanceof Error
+						? error.message
+						: "Unable to enroll right now.",
 			});
 		} finally {
 			setIsBusy(false);
@@ -134,6 +138,20 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 	}
 
 	const authDisabled = !user;
+	const enrollDisabled = !hydrated ? true : authDisabled || isEnrolled;
+	const wishlistDisabled = !hydrated ? true : authDisabled || isWishlisted;
+	const enrollLabel = !hydrated
+		? "Enroll now"
+		: !user
+		? "Log in to enroll"
+		: isEnrolled
+		? "You're enrolled"
+		: "Enroll now";
+	const wishlistLabel = !hydrated
+		? "Add to wishlist"
+		: isWishlisted
+		? "Saved to wishlist"
+		: "Add to wishlist";
 
 	return (
 		<>
@@ -157,20 +175,16 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 					<button
 						className="w-full rounded-full bg-zinc-900 px-4 py-3 font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
 						onClick={() => setIsModalOpen(true)}
-						disabled={authDisabled || isEnrolled}
+						disabled={enrollDisabled}
 					>
-						{!user
-							? "Log in to enroll"
-							: isEnrolled
-							? "You're enrolled"
-							: "Enroll now"}
+						{enrollLabel}
 					</button>
 					<button
 						className="w-full rounded-full border border-zinc-200 px-4 py-3 font-medium text-zinc-900 transition hover:border-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
 						onClick={handleWishlist}
-						disabled={authDisabled || isWishlisted}
+						disabled={wishlistDisabled}
 					>
-						{isWishlisted ? "Saved to wishlist" : "Add to wishlist"}
+						{wishlistLabel}
 					</button>
 				</div>
 				<ul className="mt-6 space-y-3 text-sm text-zinc-600">

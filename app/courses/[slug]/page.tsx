@@ -71,11 +71,14 @@ export default async function CoursePage({ params }: CoursePageProps) {
   );
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-8">
-        <CourseAccessGate course={course} defaultContent={defaultContent} />
-      </div>
-      <CourseSidebar course={course} />
-    </div>
+    <CourseAccessGate
+      course={course}
+      defaultContent={
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-8">{defaultContent}</div>
+          <CourseSidebar course={course} />
+        </div>
+      }
+    />
   );
 }

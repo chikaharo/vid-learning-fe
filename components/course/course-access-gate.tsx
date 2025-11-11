@@ -41,7 +41,8 @@ export function CourseAccessGate({
 			}
 			const enrollment = await fetchEnrollmentForCourse(user.id, course.id);
 			if (!ignore) {
-				setIsEnrolled(Boolean(enrollment));
+				const enrolled = Boolean(enrollment);
+				setIsEnrolled(enrolled);
 			}
 		}
 		load();

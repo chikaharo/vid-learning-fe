@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
 	getLessonsForCourse,
@@ -12,11 +12,14 @@ interface CourseLearningPanelProps {
 	course: Course;
 }
 
+type ActiveItem = { type: "lesson"; id: string } | { type: "quiz"; id: string };
+
 export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 	const [lessons, setLessons] = useState<Lesson[]>([]);
 	const [quizzes, setQuizzes] = useState<Quiz[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [activeItem, setActiveItem] = useState<ActiveItem | null>(null);
 
 	useEffect(() => {
 		let ignore = false;
@@ -33,9 +36,21 @@ export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 				if (ignore) return;
 				setLessons(lessonsData);
 				setQuizzes(quizzesData);
+				setActiveItem((prev) => {
+					if (prev) return prev;
+					if (lessonsData[0]) {
+						return { type: "lesson", id: lessonsData[0].id };
+					}
+					if (quizzesData[0]) {
+						return { type: "quiz", id: quizzesData[0].id };
+					}
+					return null;
+				});
 			} catch (err) {
 				if (ignore) return;
-				setError(err instanceof Error ? err.message : "Unable to load content.");
+				setError(
+					err instanceof Error ? err.message : "Unable to load content."
+				);
 			} finally {
 				if (ignore) return;
 				setLoading(false);
@@ -47,6 +62,70 @@ export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 			ignore = true;
 		};
 	}, [course.id]);
+
+	const lessonGroups = useMemo(() => {
+		if (course.modules && course.modules.length > 0) {
+			return course.modules.map((module) => {
+				const fromApi = lessons.filter(
+					(lesson) => lesson.moduleId === module.id
+				);
+				const fromCourse = module.lessons ?? [];
+				const moduleLessons =
+					fromApi.length > 0
+						? fromApi
+						: fromCourse.length > 0
+						? fromCourse
+						: lessons;
+				return {
+					id: module.id,
+					title: module.title,
+					lessons: moduleLessons,
+				};
+			});
+		}
+		return [
+			{
+				id: "default",
+				title: "Course outline",
+				lessons,
+			},
+		];
+	}, [course.modules, lessons]);
+
+	const currentLesson =
+		activeItem?.type === "lesson"
+			? lessons.find((lesson) => lesson.id === activeItem.id) ?? null
+			: null;
+	const currentQuiz =
+		activeItem?.type === "quiz"
+			? quizzes.find((quiz) => quiz.id === activeItem.id) ?? null
+			: null;
+	const uploadsBase = useMemo(() => {
+		const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+		if (!apiUrl) return "";
+		return apiUrl.replace(/\/api\/?$/, "");
+	}, []);
+	const resolvedLessonVideoUrl = useMemo(() => {
+		if (!currentLesson?.videoUrl) {
+			return "";
+		}
+		return currentLesson.videoUrl.startsWith("http")
+			? currentLesson.videoUrl
+			: `${uploadsBase}${currentLesson.videoUrl}`;
+	}, [currentLesson?.videoUrl, uploadsBase]);
+	const youtubeEmbedUrl = useMemo(() => {
+		if (!currentLesson?.videoUrl) {
+			return "";
+		}
+		const url = currentLesson.videoUrl;
+		const isYouTube = url.includes("youtube.com") || url.includes("youtu.be");
+		if (!isYouTube) {
+			return "";
+		}
+		return url
+			.replace("watch?v=", "embed/")
+			.replace("youtu.be/", "youtube.com/embed/");
+	}, [currentLesson?.videoUrl]);
 
 	if (loading) {
 		return (
@@ -65,79 +144,269 @@ export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 	}
 
 	return (
-		<div className="space-y-6">
-			<section className="rounded-3xl border border-zinc-200 bg-white p-6">
-				<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-					Your progress
-				</p>
-				<h2 className="text-2xl font-semibold text-zinc-900">{course.title}</h2>
-				<p className="mt-2 text-sm text-zinc-600">
-					Start the next lesson or recap previous material. Your progress is saved
-					automatically.
-				</p>
-			</section>
-			<section className="rounded-3xl border border-zinc-200 bg-white p-6">
-				<div className="flex flex-wrap items-center justify-between gap-4">
-					<div>
+		<div className="rounded-3xl border border-zinc-200 bg-white shadow-sm">
+			<div className="grid min-h-[600px] grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)]">
+				<aside className="flex flex-col border-b border-zinc-100 lg:border-b-0 lg:border-r">
+					<div className="border-b border-zinc-100 px-5 py-4">
 						<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-							Lessons
+							{course.level} course
 						</p>
-						<h3 className="text-xl font-semibold text-zinc-900">
+						<h2 className="text-lg font-semibold text-zinc-900">
+							{course.title}
+						</h2>
+						<p className="text-xs text-zinc-500">
 							{lessons.length} lessons · {course.durationMinutes} minutes
-						</h3>
-					</div>
-				</div>
-				<ul className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
-					{lessons.map((lesson, index) => (
-						<li key={lesson.id} className="flex items-center justify-between px-4 py-3 text-sm">
-							<div>
-								<p className="font-semibold text-zinc-900">
-									{index + 1}. {lesson.title}
-								</p>
-								<p className="text-xs text-zinc-500">
-									{lesson.durationMinutes ?? 0} min · {lesson.isPreview ? "Preview" : "Locked"}
-								</p>
-							</div>
-							<button className="text-xs font-semibold text-violet-600">Start</button>
-						</li>
-					))}
-					{lessons.length === 0 && (
-						<li className="px-4 py-3 text-sm text-zinc-500">Coming soon.</li>
-					)}
-				</ul>
-			</section>
-			<section className="rounded-3xl border border-zinc-200 bg-white p-6">
-				<div className="flex flex-wrap items-center justify-between gap-4">
-					<div>
-						<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-							Quizzes
 						</p>
-						<h3 className="text-xl font-semibold text-zinc-900">
-							{quizzes.length} knowledge checks
-						</h3>
 					</div>
-				</div>
-				<ul className="mt-4 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
-					{quizzes.map((quiz) => (
-						<li key={quiz.id} className="flex items-center justify-between px-4 py-3 text-sm">
-							<div>
-								<p className="font-semibold text-zinc-900">{quiz.title}</p>
-								<p className="text-xs text-zinc-500">
-									{quiz.timeLimitSeconds
-										? `${Math.round(quiz.timeLimitSeconds / 60)} min limit`
-										: "No timer"}
+					<div className="flex-1 overflow-y-auto px-4 py-4">
+						{lessonGroups.map((group) => (
+							<div key={group.id} className="mb-4">
+								<p className="px-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+									{group.title}
 								</p>
+								<ul className="mt-2 space-y-1">
+									{group.lessons.map((lesson, index) => {
+										const isActive = lesson.id === currentLesson?.id;
+										return (
+											<li key={lesson.id}>
+												<button
+													onClick={() => {
+														setActiveItem({ type: "lesson", id: lesson.id });
+													}}
+													className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${
+														isActive
+															? "bg-rose-50 text-rose-600"
+															: "text-zinc-700 hover:bg-zinc-100"
+													}`}
+												>
+													<span className="text-xs font-semibold text-zinc-400">
+														{index + 1}.
+													</span>
+													<div className="flex-1">
+														<p className="font-semibold">{lesson.title}</p>
+														<p className="text-xs text-zinc-500">
+															Video · {lesson.durationMinutes ?? 0} mins
+														</p>
+													</div>
+												</button>
+											</li>
+										);
+									})}
+									{group.lessons.length === 0 && (
+										<li className="px-3 py-2 text-xs text-zinc-500">
+											Lessons coming soon.
+										</li>
+									)}
+								</ul>
 							</div>
-							<button className="text-xs font-semibold text-violet-600">Review</button>
-						</li>
-					))}
-					{quizzes.length === 0 && (
-						<li className="px-4 py-3 text-sm text-zinc-500">
-							Quizzes will appear after the instructor publishes them.
-						</li>
+						))}
+
+						<div className="mt-6">
+							<p className="px-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+								Quizzes
+							</p>
+							<ul className="mt-2 space-y-1">
+								{quizzes.map((quiz, index) => {
+									const isActive =
+										activeItem?.type === "quiz" && activeItem.id === quiz.id;
+									return (
+										<li key={quiz.id}>
+											<button
+												onClick={() => {
+													setActiveItem({ type: "quiz", id: quiz.id });
+												}}
+												className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${
+													isActive
+														? "bg-sky-50 text-sky-700"
+														: "text-zinc-700 hover:bg-zinc-100"
+												}`}
+											>
+												<span className="text-xs font-semibold text-zinc-400">
+													Q{index + 1}
+												</span>
+												<div className="flex-1">
+													<p className="font-semibold">{quiz.title}</p>
+													<p className="text-xs text-zinc-500">
+														{quiz.timeLimitSeconds
+															? `${Math.round(
+																	quiz.timeLimitSeconds / 60
+															  )} min limit`
+															: "No timer"}
+													</p>
+												</div>
+											</button>
+										</li>
+									);
+								})}
+								{quizzes.length === 0 && (
+									<li className="px-3 py-2 text-xs text-zinc-500">
+										Knowledge checks coming soon.
+									</li>
+								)}
+							</ul>
+						</div>
+					</div>
+					<div className="border-t border-zinc-100 px-4 py-4">
+						<button className="flex w-full items-center justify-between rounded-2xl border border-zinc-200 px-3 py-2 text-left text-sm text-zinc-700 transition hover:border-zinc-900">
+							<span>Accomplishment</span>
+							<span className="text-xs font-semibold text-violet-600">
+								Soon
+							</span>
+						</button>
+					</div>
+				</aside>
+				<section className="flex flex-col bg-zinc-50/60 p-4 lg:p-8">
+					<div className="flex-1 rounded-2xl border border-zinc-200 bg-black/80 p-4 shadow-inner">
+						{currentLesson && activeItem?.type === "lesson" ? (
+							<div className="flex h-full flex-col rounded-xl border border-black/30 bg-gradient-to-br from-zinc-900 via-zinc-900 to-black p-6 text-white">
+								<div>
+									<p className="text-sm text-rose-200">Now playing</p>
+									<h3 className="mt-1 text-2xl font-semibold">
+										{currentLesson.title}
+									</h3>
+									<p className="text-sm text-zinc-300">
+										{`${
+											currentLesson.durationMinutes ?? 0
+										} mins • Video lesson`}
+									</p>
+								</div>
+								<div className="mt-4 flex-1 overflow-hidden rounded-2xl border border-black/50 bg-black">
+									{currentLesson.videoUrl ? (
+										youtubeEmbedUrl ? (
+											<iframe
+												key={youtubeEmbedUrl}
+												title={`Lesson video for ${currentLesson.title}`}
+												src={youtubeEmbedUrl}
+												className="h-full w-full min-h-[320px]"
+												allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+												allowFullScreen
+											/>
+										) : resolvedLessonVideoUrl ? (
+											<video
+												key={resolvedLessonVideoUrl}
+												src={resolvedLessonVideoUrl}
+												className="h-full w-full min-h-[320px]"
+												controls
+												preload="metadata"
+											/>
+										) : (
+											<div className="flex h-full w-full items-center justify-center text-sm text-zinc-300">
+												Unable to load video.
+											</div>
+										)
+									) : (
+										<div className="flex h-full w-full flex-col items-center justify-center gap-2 text-sm text-zinc-300">
+											<span>No video uploaded for this lesson yet.</span>
+											<span className="text-xs text-zinc-500">
+												Please check back later.
+											</span>
+										</div>
+									)}
+								</div>
+								<div className="mt-4 flex items-center justify-between text-xs text-zinc-400">
+									<span>0:00</span>
+									<span>
+										{currentLesson.durationMinutes
+											? `0:${String(currentLesson.durationMinutes).padStart(
+													2,
+													"0"
+											  )}`
+											: "0:00"}
+									</span>
+								</div>
+							</div>
+						) : (
+							<div className="flex h-full flex-col justify-between rounded-xl border border-black/30 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-6 text-white">
+								<div>
+									<p className="text-sm text-rose-200">
+										{activeItem?.type === "quiz"
+											? "Current quiz"
+											: "Now playing"}
+									</p>
+									<h3 className="mt-1 text-2xl font-semibold">
+										{currentLesson?.title ??
+											currentQuiz?.title ??
+											"Choose your next step"}
+									</h3>
+									<p className="text-sm text-zinc-300">
+										{activeItem?.type === "quiz" && currentQuiz
+											? `${
+													currentQuiz.timeLimitSeconds
+														? `${Math.round(
+																currentQuiz.timeLimitSeconds / 60
+														  )} min limit`
+														: "No timer"
+											  } • Quiz overview`
+											: `${
+													currentLesson?.durationMinutes ?? 0
+											  } mins • Video lesson`}
+									</p>
+								</div>
+								<div className="mt-4 flex items-center justify-between text-xs text-zinc-400">
+									<span>0:00</span>
+									<span>
+										{currentLesson?.durationMinutes
+											? `0:${String(currentLesson.durationMinutes).padStart(
+													2,
+													"0"
+											  )}`
+											: currentQuiz?.timeLimitSeconds
+											? `0:${String(
+													Math.round(currentQuiz.timeLimitSeconds / 60)
+											  ).padStart(2, "0")}`
+											: "0:00"}
+									</span>
+								</div>
+							</div>
+						)}
+					</div>
+					<div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
+						<div>
+							<p className="text-xs uppercase tracking-wide text-zinc-500">
+								{currentQuiz ? "Quiz details" : "Lesson details"}
+							</p>
+							<p className="font-semibold text-zinc-900">
+								{currentLesson?.title ??
+									currentQuiz?.title ??
+									"Select a lesson"}
+							</p>
+						</div>
+						<div className="flex items-center gap-2">
+							{currentLesson && (
+								<>
+									<button className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:border-zinc-900">
+										Mark complete
+									</button>
+								</>
+							)}
+							{currentQuiz && (
+								<button className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:border-zinc-900">
+									Start quiz
+								</button>
+							)}
+						</div>
+					</div>
+
+					{currentQuiz && (
+						<div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
+							<p className="text-xs uppercase tracking-wide text-zinc-500">
+								Quiz overview
+							</p>
+							<p className="mt-2 text-zinc-700">
+								{currentQuiz.description ??
+									"Prepare to apply what you learned in the previous lessons."}
+							</p>
+							<p className="mt-2 text-xs text-zinc-500">
+								{currentQuiz.timeLimitSeconds
+									? `Time limit: ${Math.round(
+											currentQuiz.timeLimitSeconds / 60
+									  )} minutes`
+									: "No time limit"}
+							</p>
+						</div>
 					)}
-				</ul>
-			</section>
+				</section>
+			</div>
 		</div>
 	);
 }
