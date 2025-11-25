@@ -62,6 +62,17 @@ interface ApiQuiz {
 	updatedAt?: string;
 }
 
+export interface QuizQuestionPayload {
+	prompt: string;
+	order?: number;
+	points?: number;
+	options: Array<{
+		label: string;
+		explanation?: string;
+		isCorrect?: boolean;
+	}>;
+}
+
 const MOCK_METRICS = {
 	rating: 4.8,
 	ratingCount: 1850,
@@ -204,6 +215,7 @@ export interface QuizPayload {
 	lessonId?: string;
 	timeLimitSeconds?: number;
 	isPublished?: boolean;
+	questions?: QuizQuestionPayload[];
 }
 
 export type LessonUpdatePayload = Partial<LessonPayload>;
@@ -598,6 +610,28 @@ export async function fetchEnrollmentForCourse(
 		return enrollmentsForUser.find((enrollment) => enrollment.courseId === courseId) ?? null;
 	}
 	return null;
+}
+
+export async function updateEnrollment(
+	enrollmentId: string,
+	payload: Partial<{
+		progressPercent: number;
+		completedLessonIds: string[];
+	}>
+): Promise<Enrollment> {
+	const updated = await fetchFromApi<Enrollment>(
+		`/enrollments/${enrollmentId}`,
+		{
+			method: "PATCH",
+			body: JSON.stringify(payload),
+			cache: "no-store",
+		},
+		{ fallbackToMock: false, auth: true }
+	);
+	if (!updated) {
+		throw new Error("Enrollment update returned an empty response.");
+	}
+	return updated;
 }
 
 export async function getTestimonials(): Promise<Testimonial[]> {

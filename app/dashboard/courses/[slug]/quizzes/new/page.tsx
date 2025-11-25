@@ -2,10 +2,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { QuizForm } from "@/components/course/quiz-form";
-import { getCourseBySlug, getLessonsForCourse } from "@/lib/content-service";
+import {
+	getAllCourses,
+	getCourseBySlug,
+	getLessonsForCourse,
+} from "@/lib/content-service";
 
 interface NewQuizPageProps {
 	params: Promise<{ slug: string }>;
+}
+
+export async function generateStaticParams() {
+	const courses = await getAllCourses({ live: true, fallbackToMock: true });
+	return courses.map((course) => ({ slug: course.slug }));
 }
 
 export default async function NewQuizPage({ params }: NewQuizPageProps) {
@@ -19,7 +28,10 @@ export default async function NewQuizPage({ params }: NewQuizPageProps) {
 	return (
 		<div className="space-y-6">
 			<nav className="text-sm text-zinc-500">
-				<Link href="/dashboard/courses" className="transition hover:text-zinc-900">
+				<Link
+					href="/dashboard/courses"
+					className="transition hover:text-zinc-900"
+				>
 					Courses
 				</Link>{" "}
 				/{" "}
