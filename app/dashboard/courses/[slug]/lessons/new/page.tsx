@@ -60,7 +60,12 @@ export default async function NewLessonPage({ params }: NewLessonPageProps) {
 				</p>
 			</header>
 			<section className="rounded-3xl border border-zinc-200 bg-white p-6">
-				<LessonForm courseId={course.id} courseSlug={course.slug} mode="create" />
+				<LessonForm
+					courseId={course.id}
+					courseSlug={course.slug}
+					ownerId={course.instructor.id}
+					mode="create"
+				/>
 			</section>
 		</div>
 	);

@@ -50,6 +50,7 @@ export default async function EditQuizPage({ params }: EditQuizPageProps) {
 				<QuizForm
 					courseId={course.id}
 					courseSlug={course.slug}
+					ownerId={course.instructor.id}
 					mode="edit"
 					initialQuiz={quiz}
 					initialLessons={lessons}

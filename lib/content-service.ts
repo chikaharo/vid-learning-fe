@@ -33,6 +33,7 @@ export interface ApiCourse {
 		avatarUrl?: string;
 		bio?: string;
 	};
+	instructorId: string;
 	metadata?: Record<string, unknown>;
 }
 
@@ -101,7 +102,7 @@ export function transformCourse(apiCourse: ApiCourse): Course {
 				? metadata.updatedAt
 				: new Date().toISOString(),
 		instructor: {
-			id: apiCourse.instructor?.id ?? "instructor",
+			id: apiCourse?.instructorId,
 			name:
 				apiCourse.instructor?.name ??
 				apiCourse.instructor?.full_name ??
@@ -219,6 +220,12 @@ async function tryFetchLiveCourses(): Promise<Course[] | null> {
 		if (!apiCourses || !apiCourses.length) {
 			return null;
 		}
+		console.log("Fetched live courses from API:", apiCourses);
+		console.log(
+			"Fetched live courses after transformed:",
+			apiCourses.map(transformCourse)
+		);
+
 		return apiCourses.map(transformCourse);
 	} catch (error) {
 		console.warn("Live courses request failed", error);
@@ -480,6 +487,11 @@ export async function getAllCourses(options?: {
 		{ fallbackToMock }
 	);
 	if (apiCourses && apiCourses.length) {
+		console.log("Fetched courses from API:", apiCourses);
+		console.log(
+			"Fetched courses after transformed:",
+			apiCourses.map(transformCourse)
+		);
 		return apiCourses.map(transformCourse);
 	}
 	return fallbackToMock ? courses : [];
@@ -595,7 +607,11 @@ export async function fetchEnrollmentForCourse(
 		{ fallbackToMock: false, auth: true }
 	);
 	if (enrollmentsForUser) {
-		return enrollmentsForUser.find((enrollment) => enrollment.courseId === courseId) ?? null;
+		return (
+			enrollmentsForUser.find(
+				(enrollment) => enrollment.courseId === courseId
+			) ?? null
+		);
 	}
 	return null;
 }

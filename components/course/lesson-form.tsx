@@ -16,7 +16,7 @@ import {
 	type LessonPayload,
 } from "@/lib/content-service";
 import type { Lesson } from "@/types/course";
-import { getStoredUser } from "@/lib/session";
+import { AUTH_EVENT, getStoredUser, type StoredUser } from "@/lib/session";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -33,6 +33,7 @@ interface LessonFormProps {
 	courseSlug: string;
 	mode: "create" | "edit";
 	initialLesson?: Lesson;
+	ownerId: string;
 }
 
 export function LessonForm({
@@ -40,6 +41,7 @@ export function LessonForm({
 	courseSlug,
 	mode,
 	initialLesson,
+	ownerId,
 }: LessonFormProps) {
 	const router = useRouter();
 	const inferVideoSource = (url?: string | null) =>
@@ -65,6 +67,7 @@ export function LessonForm({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+	const [user, setUser] = useState<StoredUser | null>(null);
 
 	const editor = useEditor(
 		{
@@ -106,7 +109,26 @@ export function LessonForm({
 		}
 	}, [editor, initialContent]);
 
-	const disableMutations = !getStoredUser();
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const syncUser = () => setUser(getStoredUser());
+		setUser(getStoredUser());
+		window.addEventListener("storage", syncUser);
+		window.addEventListener(AUTH_EVENT, syncUser);
+		return () => {
+			window.removeEventListener("storage", syncUser);
+			window.removeEventListener(AUTH_EVENT, syncUser);
+		};
+	}, []);
+
+	const isCourseOwner = Boolean(user?.id && user.id === ownerId);
+	const isAdmin = user?.role === "ADMIN";
+	const disableMutations = !(isCourseOwner || Boolean(isAdmin));
+	const ownershipMessage = !user
+		? "Sign in to create or edit lessons for this course."
+		: isAdmin
+		? ""
+		: "Only the course creator can change lessons for this course.";
 	const uploadsBase = useMemo(() => {
 		const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 		if (!apiUrl) return "";
@@ -141,6 +163,12 @@ export function LessonForm({
 	async function handleVideoUpload(event: ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0];
 		if (!file) return;
+		if (disableMutations) {
+			setError(
+				ownershipMessage || "You don't have permission to update this course."
+			);
+			return;
+		}
 		setIsUploading(true);
 		setUploadMessage("Uploading video…");
 		setError(null);
@@ -206,6 +234,12 @@ export function LessonForm({
 			setError("Lesson title is required.");
 			return;
 		}
+		if (disableMutations) {
+			setError(
+				ownershipMessage || "You don't have permission to update this course."
+			);
+			return;
+		}
 
 		const payload: LessonPayload = {
 			title: form.title.trim(),
@@ -250,6 +284,11 @@ export function LessonForm({
 			{status && (
 				<p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
 					{status}
+				</p>
+			)}
+			{disableMutations && ownershipMessage && (
+				<p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+					{ownershipMessage}
 				</p>
 			)}
 			<label className="block">

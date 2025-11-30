@@ -46,9 +46,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 	const [lessonDeletingId, setLessonDeletingId] = useState<string | null>(null);
 	const [quizDeletingId, setQuizDeletingId] = useState<string | null>(null);
 	const [status, setStatus] = useState<Status>(null);
-	const [user, setUser] = useState<StoredUser | null>(() =>
-		typeof window === "undefined" ? null : getStoredUser()
-	);
+	const [user, setUser] = useState<StoredUser | null>(null);
 
 	useEffect(() => {
 		let ignore = false;
@@ -87,6 +85,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const syncUser = () => setUser(getStoredUser());
+		setUser(getStoredUser());
 		window.addEventListener("storage", syncUser);
 		window.addEventListener(AUTH_EVENT, syncUser);
 		return () => {
@@ -95,9 +94,26 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 		};
 	}, []);
 
-	const disableMutations = !user;
+	const isCourseCreator = Boolean(user?.id && course.instructor?.id === user.id);
+	const isAdmin = user?.role === "ADMIN";
+	const canManageCourse = isCourseCreator || Boolean(isAdmin);
+	const disableMutations = !canManageCourse;
+	const manageRestrictionMessage = !user
+		? "Sign in to manage lessons and quizzes for this course."
+		: isAdmin
+		? ""
+		: "Only the course creator can edit or delete this course content.";
 
 	async function handleLessonDelete(id: string) {
+		if (disableMutations) {
+			setStatus({
+				type: "error",
+				message:
+					manageRestrictionMessage ||
+					"You don't have permission to change this course.",
+			});
+			return;
+		}
 		if (!window.confirm("Delete this lesson permanently?")) {
 			return;
 		}
@@ -119,6 +135,15 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 	}
 
 	async function handleQuizDelete(id: string) {
+		if (disableMutations) {
+			setStatus({
+				type: "error",
+				message:
+					manageRestrictionMessage ||
+					"You don't have permission to change this course.",
+			});
+			return;
+		}
 		if (!window.confirm("Delete this quiz permanently?")) {
 			return;
 		}
@@ -168,6 +193,12 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 					}`}
 				>
 					{status.message}
+				</div>
+			)}
+
+			{disableMutations && manageRestrictionMessage && (
+				<div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+					{manageRestrictionMessage}
 				</div>
 			)}
 
@@ -227,12 +258,23 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 							Structured curriculum
 						</h3>
 					</div>
-					<Link
-						href={`/dashboard/courses/${course.slug}/lessons/new`}
-						className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
-					>
-						New lesson
-					</Link>
+					{disableMutations ? (
+						<button
+							type="button"
+							disabled
+							title={manageRestrictionMessage || undefined}
+							className="rounded-full border border-dashed border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-400"
+						>
+							New lesson
+						</button>
+					) : (
+						<Link
+							href={`/dashboard/courses/${course.slug}/lessons/new`}
+							className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
+						>
+							New lesson
+						</Link>
+					)}
 				</div>
 				<div className="mt-4 space-y-3">
 					{lessonsLoading ? (
@@ -261,12 +303,23 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 										</p>
 									</div>
 									<div className="flex items-center gap-2">
-										<Link
-											href={`/dashboard/courses/${course.slug}/lessons/${lesson.id}/edit`}
-											className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-900 transition hover:border-zinc-900"
-										>
-											Edit
-										</Link>
+										{disableMutations ? (
+											<button
+												type="button"
+												disabled
+												title={manageRestrictionMessage || undefined}
+												className="rounded-full border border-dashed border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-400"
+											>
+												Edit
+											</button>
+										) : (
+											<Link
+												href={`/dashboard/courses/${course.slug}/lessons/${lesson.id}/edit`}
+												className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-900 transition hover:border-zinc-900"
+											>
+												Edit
+											</Link>
+										)}
 										<button
 											type="button"
 											onClick={() => handleLessonDelete(lesson.id)}
@@ -295,12 +348,23 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 							Check learner progress
 						</h3>
 					</div>
-					<Link
-						href={`/dashboard/courses/${course.slug}/quizzes/new`}
-						className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
-					>
-						New quiz
-					</Link>
+					{disableMutations ? (
+						<button
+							type="button"
+							disabled
+							title={manageRestrictionMessage || undefined}
+							className="rounded-full border border-dashed border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-400"
+						>
+							New quiz
+						</button>
+					) : (
+						<Link
+							href={`/dashboard/courses/${course.slug}/quizzes/new`}
+							className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
+						>
+							New quiz
+						</Link>
+					)}
 				</div>
 				<div className="mt-4 space-y-3">
 					{quizzesLoading ? (
@@ -329,12 +393,23 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 										</p>
 									</div>
 									<div className="flex items-center gap-2">
-										<Link
-											href={`/dashboard/courses/${course.slug}/quizzes/${quiz.id}/edit`}
-											className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-900 transition hover:border-zinc-900"
-										>
-											Edit
-										</Link>
+										{disableMutations ? (
+											<button
+												type="button"
+												disabled
+												title={manageRestrictionMessage || undefined}
+												className="rounded-full border border-dashed border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-400"
+											>
+												Edit
+											</button>
+										) : (
+											<Link
+												href={`/dashboard/courses/${course.slug}/quizzes/${quiz.id}/edit`}
+												className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-900 transition hover:border-zinc-900"
+											>
+												Edit
+											</Link>
+										)}
 										<button
 											type="button"
 											onClick={() => handleQuizDelete(quiz.id)}

@@ -134,11 +134,10 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 	const [quizSubmitting, setQuizSubmitting] = useState(false);
 	const [lessonDeletingId, setLessonDeletingId] = useState<string | null>(null);
 	const [quizDeletingId, setQuizDeletingId] = useState<string | null>(null);
-	const [lessonForm, setLessonForm] = useState<LessonFormState>(emptyLessonForm);
+	const [lessonForm, setLessonForm] =
+		useState<LessonFormState>(emptyLessonForm);
 	const [quizForm, setQuizForm] = useState<QuizFormState>(emptyQuizForm);
-	const [user, setUser] = useState<StoredUser | null>(() =>
-		typeof window === "undefined" ? null : getStoredUser()
-	);
+	const [user, setUser] = useState<StoredUser | null>(null);
 
 	const selectedCourse = useMemo(
 		() => courses.find((course) => course.id === selectedCourseId) ?? null,
@@ -160,6 +159,7 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const syncUser = () => setUser(getStoredUser());
+		setUser(getStoredUser());
 
 		window.addEventListener("storage", syncUser);
 		window.addEventListener(AUTH_EVENT, syncUser);
@@ -244,9 +244,7 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 
 	function updateLessonField(
 		field: keyof LessonFormState
-	): (
-		event: ChangeEvent<HTMLInputElement>
-	) => void {
+	): (event: ChangeEvent<HTMLInputElement>) => void {
 		return (event) => {
 			const value =
 				event.target.type === "checkbox"
@@ -259,7 +257,9 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 	function updateQuizField(
 		field: keyof QuizFormState
 	): (
-		event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+		event: ChangeEvent<
+			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+		>
 	) => void {
 		return (event) => {
 			const value =
@@ -302,6 +302,14 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			setStatus({
 				type: "error",
 				message: "Title and slug are required.",
+			});
+			return;
+		}
+
+		if (selectedCourse && !ownsCourse(selectedCourse)) {
+			setStatus({
+				type: "error",
+				message: ownershipError,
 			});
 			return;
 		}
@@ -356,6 +364,14 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 		if (!window.confirm("This will permanently delete the course. Continue?")) {
 			return;
 		}
+		const courseToDelete = courses.find((course) => course.id === id);
+		if (!ownsCourse(courseToDelete)) {
+			setStatus({
+				type: "error",
+				message: ownershipError,
+			});
+			return;
+		}
 
 		setDeletingId(id);
 		setStatus(null);
@@ -398,6 +414,13 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			});
 			return;
 		}
+		if (!ownsCourse(selectedCourse)) {
+			setStatus({
+				type: "error",
+				message: ownershipError,
+			});
+			return;
+		}
 		if (!lessonForm.title.trim()) {
 			setStatus({
 				type: "error",
@@ -435,6 +458,13 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 	}
 
 	async function handleLessonDelete(id: string) {
+		if (!ownsCourse(selectedCourse)) {
+			setStatus({
+				type: "error",
+				message: ownershipError,
+			});
+			return;
+		}
 		if (!window.confirm("Delete this lesson permanently?")) {
 			return;
 		}
@@ -470,6 +500,13 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			setStatus({
 				type: "error",
 				message: "Sign in to add quizzes.",
+			});
+			return;
+		}
+		if (!ownsCourse(selectedCourse)) {
+			setStatus({
+				type: "error",
+				message: ownershipError,
 			});
 			return;
 		}
@@ -511,6 +548,13 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 	}
 
 	async function handleQuizDelete(id: string) {
+		if (!ownsCourse(selectedCourse)) {
+			setStatus({
+				type: "error",
+				message: ownershipError,
+			});
+			return;
+		}
 		if (!window.confirm("Delete this quiz permanently?")) {
 			return;
 		}
@@ -564,8 +608,25 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 		}
 	}
 
-	const disableMutations = !user;
+	const isAdmin = user?.role === "ADMIN";
+	const ownsCourse = (course?: Course | null) =>
+		Boolean(user?.id && (isAdmin || course?.instructor?.id === user.id));
+	const canManageSelectedCourse = selectedCourse
+		? ownsCourse(selectedCourse)
+		: Boolean(user);
+	const disableMutations = !canManageSelectedCourse;
+	const manageRestrictionMessage = !user
+		? "Sign in to create, edit, or delete courses. Viewing is available without authentication."
+		: selectedCourse && !ownsCourse(selectedCourse)
+		? "Only the course creator (or an admin) can edit this course. Start a new one or switch to a course you own."
+		: null;
+	const ownershipError =
+		"Only the course creator or an admin can modify this course.";
 
+	const debugSubmit = async (course: Course) => {
+		console.log("Debug submit for course:", course);
+		console.log("Is user author: ", course.instructor?.id === user?.id);
+	};
 	return (
 		<div className="space-y-6">
 			{status && (
@@ -582,10 +643,9 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 				</div>
 			)}
 
-			{disableMutations && (
+			{disableMutations && manageRestrictionMessage && (
 				<div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-					Sign in to create, edit, or delete courses. Viewing is available
-					without authentication.
+					{manageRestrictionMessage}
 				</div>
 			)}
 
@@ -656,14 +716,18 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 											<button
 												type="button"
 												onClick={() => setSelectedCourseId(course.id)}
-												className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-900 transition hover:border-zinc-900"
+												// onClick={() => debugSubmit(course)}
+												disabled={!ownsCourse(course)}
+												className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-900 transition hover:border-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
 											>
 												Edit
 											</button>
 											<button
 												type="button"
 												onClick={() => handleDelete(course.id)}
-												disabled={disableMutations || deletingId === course.id}
+												disabled={
+													!ownsCourse(course) || deletingId === course.id
+												}
 												className="rounded-full border border-red-200 px-3 py-1 text-xs font-medium text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
 											>
 												{deletingId === course.id ? "Deleting…" : "Delete"}
@@ -851,7 +915,9 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 												}
 												className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
 											>
-												{lessonDeletingId === lesson.id ? "Deleting…" : "Remove"}
+												{lessonDeletingId === lesson.id
+													? "Deleting…"
+													: "Remove"}
 											</button>
 										</li>
 									))}
@@ -955,7 +1021,9 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 											<button
 												type="button"
 												onClick={() => handleQuizDelete(quiz.id)}
-												disabled={disableMutations || quizDeletingId === quiz.id}
+												disabled={
+													disableMutations || quizDeletingId === quiz.id
+												}
 												className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
 											>
 												{quizDeletingId === quiz.id ? "Deleting…" : "Remove"}

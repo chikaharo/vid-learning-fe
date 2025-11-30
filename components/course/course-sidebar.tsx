@@ -20,9 +20,7 @@ interface CourseSidebarProps {
 type BannerStatus = { type: "success" | "error"; message: string } | null;
 
 export function CourseSidebar({ course }: CourseSidebarProps) {
-	const [user, setUser] = useState<StoredUser | null>(() =>
-		typeof window === "undefined" ? null : getStoredUser()
-	);
+	const [user, setUser] = useState<StoredUser | null>(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isBusy, setIsBusy] = useState(false);
 	const [status, setStatus] = useState<BannerStatus>(null);
@@ -34,6 +32,7 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 		setHydrated(true);
 		if (typeof window === "undefined") return;
 		const syncUser = () => setUser(getStoredUser());
+		setUser(getStoredUser());
 		window.addEventListener("storage", syncUser);
 		window.addEventListener(AUTH_EVENT, syncUser);
 		return () => {

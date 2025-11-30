@@ -44,6 +44,7 @@ export default async function NewQuizPage({ params }: NewQuizPageProps) {
 				<QuizForm
 					courseId={course.id}
 					courseSlug={course.slug}
+					ownerId={course.instructor.id}
 					mode="create"
 					initialLessons={lessons}
 				/>

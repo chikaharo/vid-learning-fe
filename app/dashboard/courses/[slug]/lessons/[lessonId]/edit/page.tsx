@@ -45,6 +45,7 @@ export default async function EditLessonPage({ params }: EditLessonPageProps) {
 				<LessonForm
 					courseId={course.id}
 					courseSlug={course.slug}
+					ownerId={course.instructor.id}
 					mode="edit"
 					initialLesson={lesson}
 				/>

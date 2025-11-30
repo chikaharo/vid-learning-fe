@@ -11,7 +11,7 @@ import {
 import { createQuiz, getLessonsForCourse, updateQuiz } from "@/lib/content-service";
 import type { QuizPayload } from "@/lib/content-service";
 import type { Lesson, Quiz } from "@/types/course";
-import { getStoredUser } from "@/lib/session";
+import { AUTH_EVENT, getStoredUser, type StoredUser } from "@/lib/session";
 
 interface QuizFormProps {
 	courseId: string;
@@ -19,6 +19,7 @@ interface QuizFormProps {
 	mode: "create" | "edit";
 	initialQuiz?: Quiz;
 	initialLessons?: Lesson[];
+	ownerId: string;
 }
 
 export function QuizForm({
@@ -27,6 +28,7 @@ export function QuizForm({
 	mode,
 	initialQuiz,
 	initialLessons = [],
+	ownerId,
 }: QuizFormProps) {
 	const router = useRouter();
 	const [lessons, setLessons] = useState<Lesson[]>(initialLessons);
@@ -43,8 +45,28 @@ export function QuizForm({
 	const [status, setStatus] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [user, setUser] = useState<StoredUser | null>(null);
 
-	const disableMutations = !getStoredUser();
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const syncUser = () => setUser(getStoredUser());
+		setUser(getStoredUser());
+		window.addEventListener("storage", syncUser);
+		window.addEventListener(AUTH_EVENT, syncUser);
+		return () => {
+			window.removeEventListener("storage", syncUser);
+			window.removeEventListener(AUTH_EVENT, syncUser);
+		};
+	}, []);
+
+	const isCourseOwner = Boolean(user?.id && user.id === ownerId);
+	const isAdmin = user?.role === "ADMIN";
+	const disableMutations = !(isCourseOwner || Boolean(isAdmin));
+	const ownershipMessage = !user
+		? "Sign in to create or edit quizzes for this course."
+		: isAdmin
+		? ""
+		: "Only the course creator can change quizzes for this course.";
 
 	useEffect(() => {
 		if (initialLessons.length) return;
@@ -91,6 +113,12 @@ export function QuizForm({
 			setError("Quiz title is required.");
 			return;
 		}
+		if (disableMutations) {
+			setError(
+				ownershipMessage || "You don't have permission to update this course."
+			);
+			return;
+		}
 
 		const payload: QuizPayload = {
 			title: form.title.trim(),
@@ -132,6 +160,11 @@ export function QuizForm({
 			{status && (
 				<p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
 					{status}
+				</p>
+			)}
+			{disableMutations && ownershipMessage && (
+				<p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+					{ownershipMessage}
 				</p>
 			)}
 			<label className="block">
