@@ -1,6 +1,5 @@
 import {
 	courses,
-	enrollments,
 	wishlistItems,
 	learningPaths,
 	testimonials,
@@ -144,6 +143,7 @@ export function transformCourse(apiCourse: ApiCourse): Course {
 			"Curiosity to learn",
 		],
 		modules: [],
+		lessons: [],
 	};
 }
 
@@ -531,6 +531,14 @@ export async function getUserEnrollments(): Promise<
 	Array<Enrollment & { course: Course }>
 > {
 	const data = await getAllCourses({ live: true });
+	const enrollments = await fetchFromApi<Enrollment[]>(
+		"/enrollments/user/me",
+		{ cache: "no-store" },
+		{ fallbackToMock: false, auth: true }
+	);
+	if (!enrollments) {
+		return enrollments ?? [];
+	}
 	return enrollments.map((enrollment) => ({
 		...enrollment,
 		course: data.find((course) => course.id === enrollment.courseId) ?? data[0],
@@ -607,7 +615,11 @@ export async function fetchEnrollmentForCourse(
 		{ fallbackToMock: false, auth: true }
 	);
 	if (enrollmentsForUser) {
-		return enrollmentsForUser.find((enrollment) => enrollment.courseId === courseId) ?? null;
+		return (
+			enrollmentsForUser.find(
+				(enrollment) => enrollment.courseId === courseId
+			) ?? null
+		);
 	}
 	return null;
 }

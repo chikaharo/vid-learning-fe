@@ -5,20 +5,18 @@
 import * as ReactDOM from "react-dom";
 
 const dom = ReactDOM as unknown as {
-	default?: typeof ReactDOM;
-	findDOMNode?: typeof ReactDOM.findDOMNode;
+	default?: typeof ReactDOM & { findDOMNode?: (...args: any) => any };
 };
 
 if (!dom.default) {
-	dom.default = ReactDOM;
+	dom.default = ReactDOM as any;
 }
 
-if (!dom.default.findDOMNode) {
-	dom.default.findDOMNode = ReactDOM.findDOMNode;
-}
-
-if (typeof dom.findDOMNode === "function" && !dom.default.findDOMNode) {
-	dom.default.findDOMNode = dom.findDOMNode;
+// In React 19, findDOMNode is removed. We polyfill it to avoid crashes in
+// libraries that still rely on it. This basic polyfill returns the component
+// instance itself. This may not work for all cases but prevents the app from crashing.
+if (dom.default && !dom.default.findDOMNode) {
+	dom.default.findDOMNode = (instance: any) => instance;
 }
 
 export {};

@@ -66,6 +66,7 @@ export interface Course {
 	updatedAt: string;
 	instructor: Instructor;
 	modules: CourseModule[];
+	lessons: Lesson[];
 	highlights: string[];
 	whatYouWillLearn: string[];
 	requirements: string[];
