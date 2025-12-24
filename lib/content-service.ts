@@ -225,7 +225,7 @@ async function tryFetchLiveCourses(): Promise<Course[] | null> {
 	try {
 		const apiCourses = await fetchFromApi<ApiCourse[]>(
 			"/courses",
-			{ cache: "force-cache" },
+			{ cache: "no-store" },
 			{ fallbackToMock: false }
 		);
 		if (!apiCourses || !apiCourses.length) {
@@ -488,10 +488,11 @@ export async function getAllCourses(options?: {
 	}
 	const apiCourses = await fetchFromApi<ApiCourse[]>(
 		"/courses",
-		shouldTryLive ? { cache: "force-cache" } : undefined,
+		shouldTryLive ? { cache: "no-store" } : undefined,
 		{ fallbackToMock }
 	);
 	if (apiCourses && apiCourses.length) {
+		console.log("Fetched courses from API:", apiCourses);
 		return apiCourses.map(transformCourse);
 	}
 	return fallbackToMock ? courses : [];
