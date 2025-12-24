@@ -325,7 +325,7 @@ export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
 	}
 	const apiLessons = await fetchFromApi<ApiLesson[]>(
 		`/lessons/course/${courseId}`,
-		{ cache: "force-cache" },
+		{ cache: "no-store" },
 		{ fallbackToMock: false }
 	);
 	if (!apiLessons || !apiLessons.length) {
@@ -398,7 +398,7 @@ export async function getQuizzesForCourse(courseId: string): Promise<Quiz[]> {
 	}
 	const apiQuizzes = await fetchFromApi<ApiQuiz[]>(
 		`/quizzes/course/${courseId}`,
-		{ cache: "force-cache" },
+		{ cache: "no-store" },
 		{ fallbackToMock: false }
 	);
 	if (!apiQuizzes || !apiQuizzes.length) {
