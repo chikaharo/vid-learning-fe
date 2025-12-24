@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 
 import { fetchEnrollmentForCourse } from "@/lib/content-service";
-import { AUTH_EVENT, getStoredUser, type StoredUser } from "@/lib/session";
+import {
+	AUTH_EVENT,
+	ENROLLMENT_EVENT,
+	getStoredUser,
+	type StoredUser,
+} from "@/lib/session";
 import type { Course, Enrollment } from "@/types/course";
 import { CourseLearningPanel } from "./course-learning-panel";
 
@@ -22,15 +27,20 @@ export function CourseAccessGate({
 	const [isEnrolled, setIsEnrolled] = useState(false);
 	const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
 	const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(true);
+	const [refreshKey, setRefreshKey] = useState(0);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const syncUser = () => setUser(getStoredUser());
+		const refresh = () => setRefreshKey((prev) => prev + 1);
+
 		window.addEventListener("storage", syncUser);
 		window.addEventListener(AUTH_EVENT, syncUser);
+		window.addEventListener(ENROLLMENT_EVENT, refresh);
 		return () => {
 			window.removeEventListener("storage", syncUser);
 			window.removeEventListener(AUTH_EVENT, syncUser);
+			window.removeEventListener(ENROLLMENT_EVENT, refresh);
 		};
 	}, []);
 
@@ -59,7 +69,7 @@ export function CourseAccessGate({
 		return () => {
 			ignore = true;
 		};
-	}, [user, course.id]);
+	}, [user, course.id, refreshKey]);
 
 	if (isCheckingEnrollment) {
 		return (

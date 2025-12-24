@@ -5,6 +5,7 @@ export const ACCESS_TOKEN_KEY = "vu:accessToken";
 export const REFRESH_TOKEN_KEY = "vu:refreshToken";
 export const TOKEN_EXPIRY_KEY = "vu:tokenExpiry";
 export const AUTH_EVENT = "vu-auth-change";
+export const ENROLLMENT_EVENT = "vu-enrollment-change";
 
 export type StoredUser = LoginResponse["user"];
 

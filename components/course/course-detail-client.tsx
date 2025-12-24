@@ -172,8 +172,8 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 			)}
 
 			<section className="rounded-3xl border border-zinc-200 bg-white p-6">
-				<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-					<div>
+				<div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+					<div className="flex-1 md:pr-8">
 						<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
 							Course overview
 						</p>
@@ -182,7 +182,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 						</h2>
 						<p className="mt-2 text-sm text-zinc-600">{course.description}</p>
 					</div>
-					<dl className="grid gap-4 text-sm text-zinc-600 md:grid-cols-2">
+					<dl className="grid w-full shrink-0 gap-x-8 gap-y-4 text-sm text-zinc-600 md:w-auto md:grid-cols-2">
 						<div>
 							<dt className="text-xs uppercase tracking-wide text-zinc-500">
 								Level

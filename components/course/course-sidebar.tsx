@@ -9,7 +9,12 @@ import {
 	fetchEnrollmentForCourse,
 	fetchUserWishlist,
 } from "@/lib/content-service";
-import { AUTH_EVENT, getStoredUser, type StoredUser } from "@/lib/session";
+import {
+	AUTH_EVENT,
+	ENROLLMENT_EVENT,
+	getStoredUser,
+	type StoredUser,
+} from "@/lib/session";
 import type { Course } from "@/types/course";
 import { CourseEnrollModal } from "./course-enroll-modal";
 
@@ -89,6 +94,7 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 		try {
 			await enrollInCourse({ userId: user.id, courseId: course.id });
 			setIsEnrolled(true);
+			window.dispatchEvent(new Event(ENROLLMENT_EVENT));
 			setStatus({
 				type: "success",
 				message: "Enrollment confirmed! You can now access the lessons.",
