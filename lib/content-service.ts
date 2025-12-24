@@ -1,6 +1,5 @@
 import {
 	courses,
-	enrollments,
 	wishlistItems,
 	learningPaths,
 	testimonials,
@@ -60,6 +59,17 @@ interface ApiQuiz {
 	lessonId?: string | null;
 	createdAt?: string;
 	updatedAt?: string;
+}
+
+export interface QuizQuestionPayload {
+	prompt: string;
+	order?: number;
+	points?: number;
+	options: Array<{
+		label: string;
+		explanation?: string;
+		isCorrect?: boolean;
+	}>;
 }
 
 const MOCK_METRICS = {
@@ -133,6 +143,7 @@ export function transformCourse(apiCourse: ApiCourse): Course {
 			"Curiosity to learn",
 		],
 		modules: [],
+		lessons: [],
 	};
 }
 
@@ -204,6 +215,7 @@ export interface QuizPayload {
 	lessonId?: string;
 	timeLimitSeconds?: number;
 	isPublished?: boolean;
+	questions?: QuizQuestionPayload[];
 }
 
 export type LessonUpdatePayload = Partial<LessonPayload>;
@@ -213,7 +225,7 @@ async function tryFetchLiveCourses(): Promise<Course[] | null> {
 	try {
 		const apiCourses = await fetchFromApi<ApiCourse[]>(
 			"/courses",
-			{ cache: "no-store" },
+			{ cache: "force-cache" },
 			{ fallbackToMock: false }
 		);
 		if (!apiCourses || !apiCourses.length) {
@@ -233,7 +245,7 @@ async function tryFetchCourseBySlug(slug: string): Promise<Course | null> {
 	try {
 		const apiCourse = await fetchFromApi<ApiCourse>(
 			`/courses/slug/${slug}`,
-			{ cache: "no-store" },
+			{ cache: "force-cache" },
 			{ fallbackToMock: false }
 		);
 		return apiCourse ? transformCourse(apiCourse) : null;
@@ -313,7 +325,7 @@ export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
 	}
 	const apiLessons = await fetchFromApi<ApiLesson[]>(
 		`/lessons/course/${courseId}`,
-		{ cache: "no-store" },
+		{ cache: "force-cache" },
 		{ fallbackToMock: false }
 	);
 	if (!apiLessons || !apiLessons.length) {
@@ -374,7 +386,7 @@ export async function getLesson(id: string): Promise<Lesson | null> {
 	}
 	const apiLesson = await fetchFromApi<ApiLesson>(
 		`/lessons/${id}`,
-		{ cache: "no-store" },
+		{ cache: "force-cache" },
 		{ fallbackToMock: false }
 	);
 	return apiLesson ? transformLesson(apiLesson) : null;
@@ -386,7 +398,7 @@ export async function getQuizzesForCourse(courseId: string): Promise<Quiz[]> {
 	}
 	const apiQuizzes = await fetchFromApi<ApiQuiz[]>(
 		`/quizzes/course/${courseId}`,
-		{ cache: "no-store" },
+		{ cache: "force-cache" },
 		{ fallbackToMock: false }
 	);
 	if (!apiQuizzes || !apiQuizzes.length) {
@@ -447,7 +459,7 @@ export async function getQuiz(id: string): Promise<Quiz | null> {
 	}
 	const apiQuiz = await fetchFromApi<ApiQuiz>(
 		`/quizzes/${id}`,
-		{ cache: "no-store" },
+		{ cache: "force-cache" },
 		{ fallbackToMock: false }
 	);
 	return apiQuiz ? transformQuiz(apiQuiz) : null;
@@ -476,7 +488,7 @@ export async function getAllCourses(options?: {
 	}
 	const apiCourses = await fetchFromApi<ApiCourse[]>(
 		"/courses",
-		shouldTryLive ? { cache: "no-store" } : undefined,
+		shouldTryLive ? { cache: "force-cache" } : undefined,
 		{ fallbackToMock }
 	);
 	if (apiCourses && apiCourses.length) {
@@ -519,6 +531,14 @@ export async function getUserEnrollments(): Promise<
 	Array<Enrollment & { course: Course }>
 > {
 	const data = await getAllCourses({ live: true });
+	const enrollments = await fetchFromApi<Enrollment[]>(
+		"/enrollments/user/me",
+		{ cache: "no-store" },
+		{ fallbackToMock: false, auth: true }
+	);
+	if (!enrollments) {
+		return enrollments ?? [];
+	}
 	return enrollments.map((enrollment) => ({
 		...enrollment,
 		course: data.find((course) => course.id === enrollment.courseId) ?? data[0],
@@ -595,9 +615,35 @@ export async function fetchEnrollmentForCourse(
 		{ fallbackToMock: false, auth: true }
 	);
 	if (enrollmentsForUser) {
-		return enrollmentsForUser.find((enrollment) => enrollment.courseId === courseId) ?? null;
+		return (
+			enrollmentsForUser.find(
+				(enrollment) => enrollment.courseId === courseId
+			) ?? null
+		);
 	}
 	return null;
+}
+
+export async function updateEnrollment(
+	enrollmentId: string,
+	payload: Partial<{
+		progressPercent: number;
+		completedLessonIds: string[];
+	}>
+): Promise<Enrollment> {
+	const updated = await fetchFromApi<Enrollment>(
+		`/enrollments/${enrollmentId}`,
+		{
+			method: "PATCH",
+			body: JSON.stringify(payload),
+			cache: "no-store",
+		},
+		{ fallbackToMock: false, auth: true }
+	);
+	if (!updated) {
+		throw new Error("Enrollment update returned an empty response.");
+	}
+	return updated;
 }
 
 export async function getTestimonials(): Promise<Testimonial[]> {

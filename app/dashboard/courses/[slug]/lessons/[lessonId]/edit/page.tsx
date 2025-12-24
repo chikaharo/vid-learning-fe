@@ -2,18 +2,38 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { LessonForm } from "@/components/course/lesson-form";
-import { getCourseBySlug, getLesson } from "@/lib/content-service";
+import {
+	getAllCourses,
+	getCourseBySlug,
+	getLessonsForCourse,
+	getLesson,
+} from "@/lib/content-service";
 
 interface EditLessonPageProps {
 	params: Promise<{ slug: string; lessonId: string }>;
 }
 
+export async function generateStaticParams() {
+	const courses = await getAllCourses({ live: true, fallbackToMock: true });
+	const params = [];
+
+	for (const course of courses) {
+		const lessons = await getLessonsForCourse(course.id);
+		for (const lesson of lessons) {
+			params.push({ slug: course.slug, lessonId: lesson.id });
+		}
+	}
+
+	return params;
+}
+
 export default async function EditLessonPage({ params }: EditLessonPageProps) {
 	const { slug, lessonId } = await params;
-	const course = await getCourseBySlug(slug);
+	const course = await getCourseBySlug(slug, { preferLive: true });
 	if (!course) {
 		notFound();
 	}
+
 	const lesson = await getLesson(lessonId);
 	if (!lesson || lesson.courseId !== course.id) {
 		notFound();
@@ -22,7 +42,10 @@ export default async function EditLessonPage({ params }: EditLessonPageProps) {
 	return (
 		<div className="space-y-6">
 			<nav className="text-sm text-zinc-500">
-				<Link href="/dashboard/courses" className="transition hover:text-zinc-900">
+				<Link
+					href="/dashboard/courses"
+					className="transition hover:text-zinc-900"
+				>
 					Courses
 				</Link>{" "}
 				/{" "}

@@ -1,13 +1,13 @@
 export type CourseLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
 export interface Instructor {
-  id: string;
-  name: string;
-  title: string;
-  avatarUrl: string;
-  bio: string;
-  students: number;
-  reviews: number;
+	id: string;
+	name: string;
+	title: string;
+	avatarUrl: string;
+	bio: string;
+	students: number;
+	reviews: number;
 }
 
 export interface Lesson {
@@ -46,50 +46,52 @@ export interface Quiz {
 }
 
 export interface Course {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  level: CourseLevel;
-  isPublished: boolean;
-  durationMinutes: number;
-  rating: number;
-  ratingCount: number;
-  students: number;
-  price: number;
-  currency: string;
-  language: string;
-  tags: string[];
-  categories: string[];
-  thumbnailUrl?: string | null;
-  thumbnailColor: string;
-  updatedAt: string;
-  instructor: Instructor;
-  modules: CourseModule[];
-  highlights: string[];
-  whatYouWillLearn: string[];
-  requirements: string[];
+	id: string;
+	slug: string;
+	title: string;
+	description: string;
+	level: CourseLevel;
+	isPublished: boolean;
+	durationMinutes: number;
+	rating: number;
+	ratingCount: number;
+	students: number;
+	price: number;
+	currency: string;
+	language: string;
+	tags: string[];
+	categories: string[];
+	thumbnailUrl?: string | null;
+	thumbnailColor: string;
+	updatedAt: string;
+	instructor: Instructor;
+	modules: CourseModule[];
+	lessons: Lesson[];
+	highlights: string[];
+	whatYouWillLearn: string[];
+	requirements: string[];
 }
 
 export interface Enrollment {
-  id: string;
-  courseId: string;
-  progressPercent: number;
-  lastAccessed: string;
+	id: string;
+	courseId: string;
+	progressPercent: number;
+	lastAccessed: string;
+	completedLessonIds?: string[];
 }
 
 export interface Testimonial {
-  id: string;
-  quote: string;
-  learnerName: string;
-  role: string;
-  courseId: string;
+	id: string;
+	quote: string;
+	learnerName: string;
+	role: string;
+	courseId: string;
 }
 
 export interface WishlistItem {
-  id: string;
-  userId: string;
-  courseId: string;
-  course?: Course;
-  createdAt?: string;
+	id: string;
+	userId: string;
+	courseId: string;
+	course?: Course;
+	createdAt?: string;
 }

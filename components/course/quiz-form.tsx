@@ -1,17 +1,26 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-	useEffect,
-	useState,
-	type ChangeEvent,
-	type FormEvent,
-} from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 
-import { createQuiz, getLessonsForCourse, updateQuiz } from "@/lib/content-service";
-import type { QuizPayload } from "@/lib/content-service";
+import {
+	createQuiz,
+	getLessonsForCourse,
+	updateQuiz,
+} from "@/lib/content-service";
+import type { QuizPayload, QuizQuestionPayload } from "@/lib/content-service";
 import type { Lesson, Quiz } from "@/types/course";
 import { getStoredUser } from "@/lib/session";
+
+type QuestionForm = {
+	prompt: string;
+	points: string;
+	options: Array<{
+		label: string;
+		explanation: string;
+		isCorrect: boolean;
+	}>;
+};
 
 interface QuizFormProps {
 	courseId: string;
@@ -31,6 +40,16 @@ export function QuizForm({
 	const router = useRouter();
 	const [lessons, setLessons] = useState<Lesson[]>(initialLessons);
 	const [isLoadingLessons, setIsLoadingLessons] = useState(false);
+	const [questions, setQuestions] = useState<QuestionForm[]>([
+		{
+			prompt: "",
+			points: "1",
+			options: [
+				{ label: "", explanation: "", isCorrect: true },
+				{ label: "", explanation: "", isCorrect: false },
+			],
+		},
+	]);
 	const [form, setForm] = useState({
 		title: initialQuiz?.title ?? "",
 		description: initialQuiz?.description ?? "",
@@ -43,8 +62,14 @@ export function QuizForm({
 	const [status, setStatus] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [disableMutations, setDisableMutations] = useState<boolean | null>(
+		false
+	);
 
-	const disableMutations = !getStoredUser();
+	useEffect(() => {
+		setDisableMutations(!getStoredUser());
+		console.log("disableMutations", !getStoredUser());
+	}, []);
 
 	useEffect(() => {
 		if (initialLessons.length) return;
@@ -68,10 +93,95 @@ export function QuizForm({
 		}
 	}, [lessons, form.lessonId]);
 
+	function updateQuestionField(
+		index: number,
+		field: keyof QuestionForm
+	): (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void {
+		return (event) => {
+			const value = event.target.value;
+			setQuestions((prev) =>
+				prev.map((question, idx) =>
+					idx === index ? { ...question, [field]: value } : question
+				)
+			);
+		};
+	}
+
+	function updateOptionField(
+		qIndex: number,
+		oIndex: number,
+		field: "label" | "explanation"
+	): (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void {
+		return (event) => {
+			const value = event.target.value;
+			setQuestions((prev) =>
+				prev.map((question, idx) => {
+					if (idx !== qIndex) return question;
+					return {
+						...question,
+						options: question.options.map((opt, optIdx) =>
+							optIdx === oIndex ? { ...opt, [field]: value } : opt
+						),
+					};
+				})
+			);
+		};
+	}
+
+	function setCorrectOption(qIndex: number, oIndex: number) {
+		setQuestions((prev) =>
+			prev.map((question, idx) => {
+				if (idx !== qIndex) return question;
+				return {
+					...question,
+					options: question.options.map((opt, optIdx) => ({
+						...opt,
+						isCorrect: optIdx === oIndex,
+					})),
+				};
+			})
+		);
+	}
+
+	function addOption(qIndex: number) {
+		setQuestions((prev) =>
+			prev.map((question, idx) => {
+				if (idx !== qIndex) return question;
+				return {
+					...question,
+					options: [
+						...question.options,
+						{ label: "", explanation: "", isCorrect: false },
+					],
+				};
+			})
+		);
+	}
+
+	function addQuestion() {
+		setQuestions((prev) => [
+			...prev,
+			{
+				prompt: "",
+				points: "1",
+				options: [
+					{ label: "", explanation: "", isCorrect: true },
+					{ label: "", explanation: "", isCorrect: false },
+				],
+			},
+		]);
+	}
+
+	function removeQuestion(index: number) {
+		setQuestions((prev) => prev.filter((_, idx) => idx !== index));
+	}
+
 	function updateField(
 		field: keyof typeof form
 	): (
-		event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+		event: ChangeEvent<
+			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+		>
 	) => void {
 		return (event) => {
 			const value =
@@ -92,6 +202,39 @@ export function QuizForm({
 			return;
 		}
 
+		if (questions.length === 0) {
+			setError("Add at least one question to create a quiz.");
+			return;
+		}
+
+		const questionPayloads: QuizQuestionPayload[] = [];
+		for (let i = 0; i < questions.length; i++) {
+			const q = questions[i];
+			if (!q.prompt.trim()) {
+				setError(`Question ${i + 1} needs a prompt.`);
+				return;
+			}
+			if (q.options.length < 2) {
+				setError(`Question ${i + 1} needs at least two options.`);
+				return;
+			}
+			const correctCount = q.options.filter((opt) => opt.isCorrect).length;
+			if (correctCount !== 1) {
+				setError(`Question ${i + 1} must have exactly one correct answer.`);
+				return;
+			}
+			questionPayloads.push({
+				prompt: q.prompt.trim(),
+				order: i,
+				points: Number(q.points) || 1,
+				options: q.options.map((opt) => ({
+					label: opt.label.trim(),
+					explanation: opt.explanation.trim() || undefined,
+					isCorrect: opt.isCorrect,
+				})),
+			});
+		}
+
 		const payload: QuizPayload = {
 			title: form.title.trim(),
 			courseId,
@@ -101,6 +244,7 @@ export function QuizForm({
 				: undefined,
 			isPublished: form.isPublished,
 			lessonId: form.lessonId || undefined,
+			questions: questionPayloads,
 		};
 
 		setIsSubmitting(true);
@@ -201,6 +345,120 @@ export function QuizForm({
 				/>
 				Publish quiz immediately
 			</label>
+
+			<div className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-4">
+				<div className="flex items-center justify-between">
+					<div>
+						<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+							Questions
+						</p>
+						<h3 className="text-lg font-semibold text-zinc-900">
+							Single-choice only
+						</h3>
+					</div>
+					<button
+						type="button"
+						onClick={addQuestion}
+						className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:border-zinc-900"
+					>
+						Add question
+					</button>
+				</div>
+
+				{questions.map((question, qIndex) => (
+					<div
+						key={qIndex}
+						className="space-y-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4"
+					>
+						<div className="flex items-center justify-between">
+							<p className="text-sm font-semibold text-zinc-900">
+								Question {qIndex + 1}
+							</p>
+							{questions.length > 1 && (
+								<button
+									type="button"
+									onClick={() => removeQuestion(qIndex)}
+									className="text-xs font-semibold text-red-600 transition hover:text-red-700"
+								>
+									Remove
+								</button>
+							)}
+						</div>
+						<label className="block">
+							<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+								Prompt
+							</span>
+							<textarea
+								rows={2}
+								value={question.prompt}
+								onChange={updateQuestionField(qIndex, "prompt")}
+								className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+								placeholder="What is the correct output of the following code?"
+							/>
+						</label>
+						<label className="block">
+							<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+								Points
+							</span>
+							<input
+								type="number"
+								min={1}
+								value={question.points}
+								onChange={updateQuestionField(qIndex, "points")}
+								className="mt-1 w-32 rounded-2xl border border-zinc-200 px-4 py-2 text-sm outline-none focus:border-zinc-900"
+							/>
+						</label>
+
+						<div className="space-y-2">
+							<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+								Options
+							</p>
+							{question.options.map((option, oIndex) => (
+								<div
+									key={oIndex}
+									className="flex items-start gap-3 rounded-2xl border border-zinc-200 bg-white px-3 py-2"
+								>
+									<input
+										type="radio"
+										name={`q-${qIndex}-correct`}
+										checked={option.isCorrect}
+										onChange={() => setCorrectOption(qIndex, oIndex)}
+										className="mt-2 h-4 w-4 text-violet-600"
+									/>
+									<div className="flex-1 space-y-2">
+										<input
+											type="text"
+											value={option.label}
+											onChange={updateOptionField(qIndex, oIndex, "label")}
+											placeholder="Option text"
+											className="w-full rounded-2xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-900"
+										/>
+										<textarea
+											rows={2}
+											value={option.explanation}
+											onChange={updateOptionField(
+												qIndex,
+												oIndex,
+												"explanation"
+											)}
+											placeholder="Explanation (optional)"
+											className="w-full rounded-2xl border border-zinc-200 px-3 py-2 text-xs outline-none focus:border-zinc-900"
+										/>
+									</div>
+								</div>
+							))}
+							<button
+								type="button"
+								onClick={() => addOption(qIndex)}
+								className="rounded-full border border-dashed border-zinc-300 px-3 py-1 text-xs font-semibold text-zinc-600 transition hover:border-zinc-500"
+							>
+								Add option
+							</button>
+						</div>
+					</div>
+				))}
+			</div>
+
 			<button
 				type="submit"
 				disabled={disableMutations || isSubmitting}
@@ -211,8 +469,8 @@ export function QuizForm({
 						? "Creating quiz…"
 						: "Saving changes…"
 					: mode === "create"
-						? "Create quiz"
-						: "Save quiz"}
+					? "Create quiz"
+					: "Save quiz"}
 			</button>
 		</form>
 	);

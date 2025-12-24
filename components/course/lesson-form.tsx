@@ -26,8 +26,6 @@ import TextAlign from "@tiptap/extension-text-align";
 import Heading from "@tiptap/extension-heading";
 import Image from "@tiptap/extension-image";
 
-// const RichTextEditor = dynamic(() => import("react-quill"), { ssr: false });
-
 interface LessonFormProps {
 	courseId: string;
 	courseSlug: string;

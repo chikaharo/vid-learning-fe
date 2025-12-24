@@ -1,25 +1,45 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CheckIcon } from "@heroicons/react/24/solid";
 
 import {
 	getLessonsForCourse,
 	getQuizzesForCourse,
+	updateEnrollment,
 } from "@/lib/content-service";
-import type { Course, Lesson, Quiz } from "@/types/course";
+import type { Course, Enrollment, Lesson, Quiz } from "@/types/course";
 
 interface CourseLearningPanelProps {
 	course: Course;
+	enrollment: Enrollment;
+	onEnrollmentUpdate?: (enrollment: Enrollment) => void;
 }
 
 type ActiveItem = { type: "lesson"; id: string } | { type: "quiz"; id: string };
 
-export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
+export function CourseLearningPanel({
+	course,
+	enrollment,
+	onEnrollmentUpdate,
+}: CourseLearningPanelProps) {
 	const [lessons, setLessons] = useState<Lesson[]>([]);
 	const [quizzes, setQuizzes] = useState<Quiz[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [activeItem, setActiveItem] = useState<ActiveItem | null>(null);
+	const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(
+		() => enrollment.completedLessonIds ?? []
+	);
+	const [isSavingProgress, setIsSavingProgress] = useState(false);
+	const [progressMessage, setProgressMessage] = useState<{
+		type: "success" | "error";
+		text: string;
+	} | null>(null);
+
+	useEffect(() => {
+		setCompletedLessonIds(enrollment.completedLessonIds ?? []);
+	}, [enrollment.completedLessonIds]);
 
 	useEffect(() => {
 		let ignore = false;
@@ -100,6 +120,71 @@ export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 		activeItem?.type === "quiz"
 			? quizzes.find((quiz) => quiz.id === activeItem.id) ?? null
 			: null;
+	const completedLessonSet = useMemo(
+		() => new Set(completedLessonIds),
+		[completedLessonIds]
+	);
+	const completedLessonsCount = useMemo(() => {
+		if (!lessons.length) return 0;
+		return lessons.reduce(
+			(count, lesson) =>
+				completedLessonSet.has(lesson.id) ? count + 1 : count,
+			0
+		);
+	}, [completedLessonSet, lessons]);
+	const totalLessonsCount = useMemo(() => {
+		const uniqueIds = new Set(lessons.map((lesson) => lesson.id));
+		return uniqueIds.size;
+	}, [lessons]);
+	const learningProgressPercent =
+		totalLessonsCount > 0
+			? Math.round((completedLessonsCount / totalLessonsCount) * 100)
+			: 0;
+	const handleMarkLessonComplete = async (lessonId: string) => {
+		if (
+			!lessonId ||
+			completedLessonSet.has(lessonId) ||
+			isSavingProgress ||
+			!totalLessonsCount
+		) {
+			return;
+		}
+
+		const nextCompleted = [...completedLessonIds, lessonId];
+		const nextProgressPercent = Math.min(
+			100,
+			Math.round((nextCompleted.length / totalLessonsCount) * 100)
+		);
+
+		setCompletedLessonIds(nextCompleted);
+		setIsSavingProgress(true);
+		setProgressMessage(null);
+		try {
+			const updated = await updateEnrollment(enrollment.id, {
+				completedLessonIds: nextCompleted,
+				progressPercent: nextProgressPercent,
+			});
+			setCompletedLessonIds(updated.completedLessonIds ?? nextCompleted);
+			onEnrollmentUpdate?.(updated);
+			setProgressMessage({
+				type: "success",
+				text: "Progress saved.",
+			});
+		} catch (error) {
+			setCompletedLessonIds((prev) =>
+				prev.filter((completedId) => completedId !== lessonId)
+			);
+			setProgressMessage({
+				type: "error",
+				text:
+					error instanceof Error
+						? error.message
+						: "Unable to save your progress right now.",
+			});
+		} finally {
+			setIsSavingProgress(false);
+		}
+	};
 	const uploadsBase = useMemo(() => {
 		const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 		if (!apiUrl) return "";
@@ -167,6 +252,7 @@ export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 								<ul className="mt-2 space-y-1">
 									{group.lessons.map((lesson, index) => {
 										const isActive = lesson.id === currentLesson?.id;
+										const isCompleted = completedLessonSet.has(lesson.id);
 										return (
 											<li key={lesson.id}>
 												<button
@@ -183,7 +269,17 @@ export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 														{index + 1}.
 													</span>
 													<div className="flex-1">
-														<p className="font-semibold">{lesson.title}</p>
+														<div className="flex items-center justify-between gap-2">
+															<p className="font-semibold">{lesson.title}</p>
+															{isCompleted && (
+																// <span className="rounded-full border border-emerald-500 px-1.5 text-[10px] font-semibold uppercase text-emerald-600">
+																// 	V
+																// </span>
+																<div>
+																	<CheckIcon className="h-4 w-4 text-emerald-500" />
+																</div>
+															)}
+														</div>
 														<p className="text-xs text-zinc-500">
 															Video · {lesson.durationMinutes ?? 0} mins
 														</p>
@@ -200,6 +296,23 @@ export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 								</ul>
 							</div>
 						))}
+						{totalLessonsCount > 0 && (
+							<div className="mt-5 rounded-2xl border border-zinc-200 bg-white/80 p-3 text-xs text-zinc-600">
+								<div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+									<span>Learning progress</span>
+									<span>{learningProgressPercent}%</span>
+								</div>
+								<div className="mt-2 h-2 rounded-full bg-zinc-100">
+									<div
+										className="h-full rounded-full bg-rose-500 transition-all"
+										style={{ width: `${learningProgressPercent}%` }}
+									/>
+								</div>
+								<p className="mt-1 text-[11px] text-zinc-500">
+									{completedLessonsCount}/{totalLessonsCount} lessons completed
+								</p>
+							</div>
+						)}
 
 						<div className="mt-6">
 							<p className="px-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
@@ -374,8 +487,24 @@ export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 						<div className="flex items-center gap-2">
 							{currentLesson && (
 								<>
-									<button className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:border-zinc-900">
-										Mark complete
+									<button
+										type="button"
+										onClick={() => handleMarkLessonComplete(currentLesson.id)}
+										disabled={
+											completedLessonSet.has(currentLesson.id) ||
+											isSavingProgress
+										}
+										className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+											completedLessonSet.has(currentLesson.id)
+												? "border border-emerald-200 bg-emerald-50 text-emerald-600"
+												: "border border-zinc-200 text-zinc-700 hover:border-zinc-900"
+										}`}
+									>
+										{completedLessonSet.has(currentLesson.id)
+											? "Completed"
+											: isSavingProgress
+											? "Saving…"
+											: "Mark complete"}
 									</button>
 								</>
 							)}
@@ -386,6 +515,18 @@ export function CourseLearningPanel({ course }: CourseLearningPanelProps) {
 							)}
 						</div>
 					</div>
+
+					{progressMessage && (
+						<p
+							className={`mt-2 text-xs ${
+								progressMessage.type === "error"
+									? "text-red-600"
+									: "text-emerald-600"
+							}`}
+						>
+							{progressMessage.text}
+						</p>
+					)}
 
 					{currentQuiz && (
 						<div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600">

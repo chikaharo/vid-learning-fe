@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { fetchEnrollmentForCourse } from "@/lib/content-service";
 import { AUTH_EVENT, getStoredUser, type StoredUser } from "@/lib/session";
-import type { Course } from "@/types/course";
+import type { Course, Enrollment } from "@/types/course";
 import { CourseLearningPanel } from "./course-learning-panel";
 
 interface CourseAccessGateProps {
@@ -20,6 +20,8 @@ export function CourseAccessGate({
 		typeof window === "undefined" ? null : getStoredUser()
 	);
 	const [isEnrolled, setIsEnrolled] = useState(false);
+	const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+	const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(true);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -37,12 +39,20 @@ export function CourseAccessGate({
 		async function load() {
 			if (!user) {
 				setIsEnrolled(false);
+				setEnrollment(null);
+				setIsCheckingEnrollment(false);
 				return;
 			}
-			const enrollment = await fetchEnrollmentForCourse(user.id, course.id);
+			setIsCheckingEnrollment(true);
+			const enrollmentRecord = await fetchEnrollmentForCourse(
+				user.id,
+				course.id
+			);
 			if (!ignore) {
-				const enrolled = Boolean(enrollment);
+				const enrolled = Boolean(enrollmentRecord);
 				setIsEnrolled(enrolled);
+				setEnrollment(enrollmentRecord);
+				setIsCheckingEnrollment(false);
 			}
 		}
 		load();
@@ -51,8 +61,22 @@ export function CourseAccessGate({
 		};
 	}, [user, course.id]);
 
-	if (isEnrolled) {
-		return <CourseLearningPanel course={course} />;
+	if (isCheckingEnrollment) {
+		return (
+			<section className="rounded-3xl border border-zinc-200 bg-white p-6 text-sm text-zinc-500">
+				Loading your workspace…
+			</section>
+		);
+	}
+
+	if (isEnrolled && enrollment) {
+		return (
+			<CourseLearningPanel
+				course={course}
+				enrollment={enrollment}
+				onEnrollmentUpdate={setEnrollment}
+			/>
+		);
 	}
 
 	return <>{defaultContent}</>;

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { EnrollmentCard } from "@/components/dashboard/enrollment-card";
 import { CourseCard } from "@/components/course/course-card";
@@ -6,16 +9,46 @@ import {
   getFeaturedCourses,
   getUserEnrollments,
 } from "@/lib/content-service";
+import type { Course, Enrollment } from "@/types/course";
 
-export const metadata = {
-  title: "My learning",
-};
+export default function DashboardPage() {
+  const [enrollments, setEnrollments] = useState<(Enrollment & { course: Course })[]>([]);
+  const [recommended, setRecommended] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function DashboardPage() {
-  const [enrollments, recommended] = await Promise.all([
-    getUserEnrollments(),
-    getFeaturedCourses(),
-  ]);
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [enrollmentsData, recommendedData] = await Promise.all([
+          getUserEnrollments(),
+          getFeaturedCourses(),
+        ]);
+        setEnrollments(enrollmentsData || []);
+        setRecommended(recommendedData || []);
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  if (loading) {
+     return (
+      <div className="space-y-10 animate-pulse">
+        <header className="flex flex-col gap-2">
+          <div className="h-4 w-32 bg-zinc-200 rounded"></div>
+          <div className="h-8 w-96 bg-zinc-200 rounded"></div>
+          <div className="h-4 w-64 bg-zinc-200 rounded"></div>
+        </header>
+         <section className="grid gap-6 lg:grid-cols-2">
+             <div className="h-48 bg-zinc-200 rounded-3xl"></div>
+             <div className="h-48 bg-zinc-200 rounded-3xl"></div>
+         </section>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10">
@@ -38,9 +71,16 @@ export default async function DashboardPage() {
       </header>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        {enrollments.map((enrollment) => (
-          <EnrollmentCard key={enrollment.id} enrollment={enrollment} />
-        ))}
+        {enrollments.length > 0 ? (
+          enrollments.map((enrollment) => (
+            <EnrollmentCard key={enrollment.id} enrollment={enrollment} />
+          ))
+        ) : (
+             <div className="col-span-full rounded-3xl border border-zinc-200 bg-white p-8 text-center">
+                <p className="text-zinc-600">You haven't enrolled in any courses yet.</p>
+                <Link href="/courses" className="mt-2 inline-block text-violet-600 hover:underline">Browse courses</Link>
+             </div>
+        )}
       </section>
 
       <section className="space-y-4">
