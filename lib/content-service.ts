@@ -225,7 +225,7 @@ async function tryFetchLiveCourses(): Promise<Course[] | null> {
 	try {
 		const apiCourses = await fetchFromApi<ApiCourse[]>(
 			"/courses",
-			{ cache: "no-store" },
+			{ cache: "force-cache" },
 			{ fallbackToMock: false }
 		);
 		if (!apiCourses || !apiCourses.length) {
@@ -245,7 +245,7 @@ async function tryFetchCourseBySlug(slug: string): Promise<Course | null> {
 	try {
 		const apiCourse = await fetchFromApi<ApiCourse>(
 			`/courses/slug/${slug}`,
-			{ cache: "no-store" },
+			{ cache: "force-cache" },
 			{ fallbackToMock: false }
 		);
 		return apiCourse ? transformCourse(apiCourse) : null;
@@ -325,7 +325,7 @@ export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
 	}
 	const apiLessons = await fetchFromApi<ApiLesson[]>(
 		`/lessons/course/${courseId}`,
-		{ cache: "no-store" },
+		{ cache: "force-cache" },
 		{ fallbackToMock: false }
 	);
 	if (!apiLessons || !apiLessons.length) {
@@ -386,7 +386,7 @@ export async function getLesson(id: string): Promise<Lesson | null> {
 	}
 	const apiLesson = await fetchFromApi<ApiLesson>(
 		`/lessons/${id}`,
-		{ cache: "no-store" },
+		{ cache: "force-cache" },
 		{ fallbackToMock: false }
 	);
 	return apiLesson ? transformLesson(apiLesson) : null;
@@ -398,7 +398,7 @@ export async function getQuizzesForCourse(courseId: string): Promise<Quiz[]> {
 	}
 	const apiQuizzes = await fetchFromApi<ApiQuiz[]>(
 		`/quizzes/course/${courseId}`,
-		{ cache: "no-store" },
+		{ cache: "force-cache" },
 		{ fallbackToMock: false }
 	);
 	if (!apiQuizzes || !apiQuizzes.length) {
@@ -459,7 +459,7 @@ export async function getQuiz(id: string): Promise<Quiz | null> {
 	}
 	const apiQuiz = await fetchFromApi<ApiQuiz>(
 		`/quizzes/${id}`,
-		{ cache: "no-store" },
+		{ cache: "force-cache" },
 		{ fallbackToMock: false }
 	);
 	return apiQuiz ? transformQuiz(apiQuiz) : null;
@@ -488,7 +488,7 @@ export async function getAllCourses(options?: {
 	}
 	const apiCourses = await fetchFromApi<ApiCourse[]>(
 		"/courses",
-		shouldTryLive ? { cache: "no-store" } : undefined,
+		shouldTryLive ? { cache: "force-cache" } : undefined,
 		{ fallbackToMock }
 	);
 	if (apiCourses && apiCourses.length) {

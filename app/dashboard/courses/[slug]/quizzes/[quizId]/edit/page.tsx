@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { QuizForm } from "@/components/course/quiz-form";
 import {
 	getCourseBySlug,
+	getAllCourses,
+	getQuizzesForCourse,
 	getLessonsForCourse,
 	getQuiz,
 } from "@/lib/content-service";
@@ -12,12 +14,27 @@ interface EditQuizPageProps {
 	params: Promise<{ slug: string; quizId: string }>;
 }
 
+export async function generateStaticParams() {
+	const courses = await getAllCourses({ live: true, fallbackToMock: true });
+	const params = [];
+
+	for (const course of courses) {
+		const quizzes = await getQuizzesForCourse(course.id);
+		for (const quiz of quizzes) {
+			params.push({ slug: course.slug, quizId: quiz.id });
+		}
+	}
+
+	return params;
+}
+
 export default async function EditQuizPage({ params }: EditQuizPageProps) {
 	const { slug, quizId } = await params;
-	const course = await getCourseBySlug(slug);
+	const course = await getCourseBySlug(slug, { preferLive: true });
 	if (!course) {
 		notFound();
 	}
+	// TODO: Add preferLive to getQuiz
 	const quiz = await getQuiz(quizId);
 	if (!quiz || quiz.courseId !== course.id) {
 		notFound();
@@ -27,7 +44,10 @@ export default async function EditQuizPage({ params }: EditQuizPageProps) {
 	return (
 		<div className="space-y-6">
 			<nav className="text-sm text-zinc-500">
-				<Link href="/dashboard/courses" className="transition hover:text-zinc-900">
+				<Link
+					href="/dashboard/courses"
+					className="transition hover:text-zinc-900"
+				>
 					Courses
 				</Link>{" "}
 				/{" "}
