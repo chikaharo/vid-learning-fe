@@ -15,6 +15,13 @@ import type {
 } from "@/types/course";
 import { fetchFromApi } from "./api";
 
+interface ApiModule {
+	id: string;
+	title: string;
+	description?: string;
+	lessons: ApiLesson[];
+}
+
 export interface ApiCourse {
 	id: string;
 	title: string;
@@ -25,6 +32,9 @@ export interface ApiCourse {
 	tags: string[];
 	thumbnailUrl?: string;
 	isPublished: boolean;
+	whatYouWillLearn?: string[];
+	modules?: ApiModule[];
+	lessons?: ApiLesson[];
 	instructor?: {
 		id: string;
 		name?: string;
@@ -80,6 +90,15 @@ const MOCK_METRICS = {
 
 const currency = "USD";
 
+function transformModule(apiModule: ApiModule): Course["modules"][0] {
+	return {
+		id: apiModule.id,
+		title: apiModule.title,
+		description: apiModule.description ?? "",
+		lessons: apiModule.lessons ? apiModule.lessons.map(transformLesson) : [],
+	};
+}
+
 export function transformCourse(apiCourse: ApiCourse): Course {
 	const metadata = apiCourse.metadata ?? {};
 	return {
@@ -133,17 +152,19 @@ export function transformCourse(apiCourse: ApiCourse): Course {
 			"Downloadable resources",
 			"Career-ready projects",
 		],
-		whatYouWillLearn: (metadata.whatYouWillLearn as string[]) ?? [
-			"Ship a video learning MVP",
-			"Model courses, lessons, and enrollments",
-			"Design dashboards learners love",
-		],
+		whatYouWillLearn:
+			apiCourse.whatYouWillLearn ??
+			(metadata.whatYouWillLearn as string[]) ?? [
+				"Ship a video learning MVP",
+				"Model courses, lessons, and enrollments",
+				"Design dashboards learners love",
+			],
 		requirements: (metadata.requirements as string[]) ?? [
 			"Basic JavaScript knowledge",
 			"Curiosity to learn",
 		],
-		modules: [],
-		lessons: [],
+		modules: apiCourse.modules ? apiCourse.modules.map(transformModule) : [],
+		lessons: apiCourse.lessons ? apiCourse.lessons.map(transformLesson) : [],
 	};
 }
 
@@ -326,7 +347,7 @@ export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
 	const apiLessons = await fetchFromApi<ApiLesson[]>(
 		`/lessons/course/${courseId}`,
 		{ cache: "no-store" },
-		{ fallbackToMock: false }
+		{ fallbackToMock: true }
 	);
 	if (!apiLessons || !apiLessons.length) {
 		return [];
@@ -387,7 +408,7 @@ export async function getLesson(id: string): Promise<Lesson | null> {
 	const apiLesson = await fetchFromApi<ApiLesson>(
 		`/lessons/${id}`,
 		{ cache: "force-cache" },
-		{ fallbackToMock: false }
+		{ fallbackToMock: true }
 	);
 	return apiLesson ? transformLesson(apiLesson) : null;
 }
@@ -399,7 +420,7 @@ export async function getQuizzesForCourse(courseId: string): Promise<Quiz[]> {
 	const apiQuizzes = await fetchFromApi<ApiQuiz[]>(
 		`/quizzes/course/${courseId}`,
 		{ cache: "no-store" },
-		{ fallbackToMock: false }
+		{ fallbackToMock: true }
 	);
 	if (!apiQuizzes || !apiQuizzes.length) {
 		return [];
@@ -460,7 +481,7 @@ export async function getQuiz(id: string): Promise<Quiz | null> {
 	const apiQuiz = await fetchFromApi<ApiQuiz>(
 		`/quizzes/${id}`,
 		{ cache: "force-cache" },
-		{ fallbackToMock: false }
+		{ fallbackToMock: true }
 	);
 	return apiQuiz ? transformQuiz(apiQuiz) : null;
 }
