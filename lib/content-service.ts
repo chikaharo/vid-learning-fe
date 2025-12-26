@@ -152,8 +152,7 @@ export function transformCourse(apiCourse: ApiCourse): Course {
 			"Downloadable resources",
 			"Career-ready projects",
 		],
-		whatYouWillLearn:
-			apiCourse.whatYouWillLearn ??
+		whatYouWillLearn: apiCourse.whatYouWillLearn ??
 			(metadata.whatYouWillLearn as string[]) ?? [
 				"Ship a video learning MVP",
 				"Model courses, lessons, and enrollments",
@@ -266,7 +265,7 @@ async function tryFetchCourseBySlug(slug: string): Promise<Course | null> {
 	try {
 		const apiCourse = await fetchFromApi<ApiCourse>(
 			`/courses/slug/${slug}`,
-			{ cache: "force-cache" },
+			{ cache: "no-store" },
 			{ fallbackToMock: false }
 		);
 		return apiCourse ? transformCourse(apiCourse) : null;
@@ -344,15 +343,21 @@ export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
 	if (!courseId) {
 		return [];
 	}
-	const apiLessons = await fetchFromApi<ApiLesson[]>(
-		`/lessons/course/${courseId}`,
-		{ cache: "no-store" },
-		{ fallbackToMock: true }
-	);
-	if (!apiLessons || !apiLessons.length) {
+	try {
+		const apiLessons = await fetchFromApi<ApiLesson[]>(
+			`/lessons/course/${courseId}?t=${Date.now()}`,
+			{ cache: "no-store" },
+			{ fallbackToMock: true }
+		);
+		console.log("API Lessons:", apiLessons);
+		if (!apiLessons || !apiLessons.length) {
+			return [];
+		}
+		return apiLessons.map(transformLesson);
+	} catch (error) {
+		console.error("Failed to get lessons:", error);
 		return [];
 	}
-	return apiLessons.map(transformLesson);
 }
 
 export async function createLesson(payload: LessonPayload): Promise<Lesson> {
@@ -418,7 +423,7 @@ export async function getQuizzesForCourse(courseId: string): Promise<Quiz[]> {
 		return [];
 	}
 	const apiQuizzes = await fetchFromApi<ApiQuiz[]>(
-		`/quizzes/course/${courseId}`,
+		`/quizzes/course/${courseId}?t=${Date.now()}`,
 		{ cache: "no-store" },
 		{ fallbackToMock: true }
 	);
@@ -492,6 +497,18 @@ export async function fetchLiveCourses(): Promise<Course[]> {
 		throw new Error("Unable to load courses from the API.");
 	}
 	return liveCourses;
+}
+
+export async function getInstructorCourses(): Promise<Course[]> {
+	const apiCourses = await fetchFromApi<ApiCourse[]>(
+		"/courses/instructor/me",
+		{ cache: "no-store" },
+		{ fallbackToMock: false, auth: true }
+	);
+	if (!apiCourses || !apiCourses.length) {
+		return [];
+	}
+	return apiCourses.map(transformCourse);
 }
 
 export async function getAllCourses(options?: {
