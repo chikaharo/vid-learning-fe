@@ -33,6 +33,21 @@ export interface CourseModule {
 	lessons: Lesson[];
 }
 
+export interface QuizOption {
+	id: string;
+	label: string;
+	isCorrect: boolean;
+	explanation?: string;
+}
+
+export interface QuizQuestion {
+	id: string;
+	prompt: string;
+	points: number;
+	options: QuizOption[];
+	order: number;
+}
+
 export interface Quiz {
 	id: string;
 	title: string;
@@ -41,6 +56,7 @@ export interface Quiz {
 	lessonId?: string | null;
 	timeLimitSeconds?: number;
 	isPublished: boolean;
+	questions?: QuizQuestion[];
 	createdAt?: string;
 	updatedAt?: string;
 }

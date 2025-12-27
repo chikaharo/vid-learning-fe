@@ -1,10 +1,29 @@
 import type { Course } from "@/types/course";
+import { getQuizzesForCourse } from "@/lib/content-service";
 
 interface CourseCurriculumProps {
   course: Course;
 }
 
-export function CourseCurriculum({ course }: CourseCurriculumProps) {
+export async function CourseCurriculum({ course }: CourseCurriculumProps) {
+  const quizzes = await getQuizzesForCourse(course.id);
+  const orphanedLessons = course.lessons.filter((lesson) => !lesson.moduleId);
+  const displayModules = [
+    ...course.modules,
+    ...(orphanedLessons.length > 0
+      ? [
+          {
+            id: "general-lessons",
+            title: "General Lessons",
+            description: "Additional lessons for this course",
+            lessons: orphanedLessons,
+          },
+        ]
+      : []),
+  ];
+
+  const totalLectures = course.lessons.length + quizzes.length;
+
   return (
     <section className="rounded-3xl border border-zinc-200 bg-white p-6">
       <header className="flex items-center justify-between">
@@ -13,14 +32,13 @@ export function CourseCurriculum({ course }: CourseCurriculumProps) {
             Course curriculum
           </h2>
           <p className="text-sm text-zinc-600">
-            {course.modules.length} sections ·{" "}
-            {course.modules.reduce((total, module) => total + module.lessons.length, 0)}{" "}
-            lectures · {Math.round(course.durationMinutes / 60)} hours total length
+            {totalLectures} lectures ·{" "}
+            {Math.round(course.durationMinutes / 60)} hours total length
           </p>
         </div>
       </header>
       <div className="mt-6 space-y-4">
-        {course.modules.map((module) => (
+        {displayModules.map((module) => (
           <div
             key={module.id}
             className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4"

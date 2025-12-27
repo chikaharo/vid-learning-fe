@@ -59,6 +59,21 @@ interface ApiLesson {
 	content?: string | null;
 }
 
+interface ApiQuizOption {
+	id: string;
+	label: string;
+	isCorrect: boolean;
+	explanation?: string;
+}
+
+interface ApiQuizQuestion {
+	id: string;
+	prompt: string;
+	points: number;
+	order: number;
+	options: ApiQuizOption[];
+}
+
 interface ApiQuiz {
 	id: string;
 	title: string;
@@ -67,6 +82,7 @@ interface ApiQuiz {
 	isPublished: boolean;
 	courseId: string;
 	lessonId?: string | null;
+	questions?: ApiQuizQuestion[];
 	createdAt?: string;
 	updatedAt?: string;
 }
@@ -193,6 +209,18 @@ function transformQuiz(apiQuiz: ApiQuiz): Quiz {
 		isPublished: apiQuiz.isPublished ?? false,
 		courseId: apiQuiz.courseId,
 		lessonId: apiQuiz.lessonId ?? null,
+		questions: apiQuiz.questions?.map((q) => ({
+			id: q.id,
+			prompt: q.prompt,
+			points: q.points,
+			order: q.order,
+			options: q.options?.map((o) => ({
+				id: o.id,
+				label: o.label,
+				isCorrect: o.isCorrect,
+				explanation: o.explanation,
+			})) ?? [],
+		})),
 		createdAt: apiQuiz.createdAt ?? new Date().toISOString(),
 		updatedAt:
 			apiQuiz.updatedAt ?? apiQuiz.createdAt ?? new Date().toISOString(),
