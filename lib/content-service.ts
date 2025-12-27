@@ -160,8 +160,14 @@ export function transformCourse(apiCourse: ApiCourse): Course {
 			bio:
 				apiCourse.instructor?.bio ??
 				"Helping thousands of builders ship video learning experiences.",
-			students: Number(metadata.instructorStudents) || 48000,
-			reviews: Number(metadata.instructorReviews) || 4200,
+			students:
+				metadata.instructorStudents !== undefined
+					? Number(metadata.instructorStudents)
+					: 0,
+			reviews:
+				metadata.instructorReviews !== undefined
+					? Number(metadata.instructorReviews)
+					: 0,
 		},
 		highlights: (metadata.highlights as string[]) ?? [
 			"Hands-on curriculum",
@@ -214,12 +220,13 @@ function transformQuiz(apiQuiz: ApiQuiz): Quiz {
 			prompt: q.prompt,
 			points: q.points,
 			order: q.order,
-			options: q.options?.map((o) => ({
-				id: o.id,
-				label: o.label,
-				isCorrect: o.isCorrect,
-				explanation: o.explanation,
-			})) ?? [],
+			options:
+				q.options?.map((o) => ({
+					id: o.id,
+					label: o.label,
+					isCorrect: o.isCorrect,
+					explanation: o.explanation,
+				})) ?? [],
 		})),
 		createdAt: apiQuiz.createdAt ?? new Date().toISOString(),
 		updatedAt:
@@ -296,6 +303,7 @@ async function tryFetchCourseBySlug(slug: string): Promise<Course | null> {
 			{ cache: "no-store" },
 			{ fallbackToMock: false }
 		);
+		console.log("API Course:", apiCourse);
 		return apiCourse ? transformCourse(apiCourse) : null;
 	} catch (error) {
 		console.warn(`Failed to fetch course by slug "${slug}" from API`, error);
@@ -589,9 +597,7 @@ export async function getCourseBySlug(
 		return apiCourse;
 	}
 
-	const data = await getAllCourses();
-	const fallbackCourse = data.find((item) => item.slug === slug);
-	return fallbackCourse ?? null;
+	return null;
 }
 
 export async function getUserEnrollments(): Promise<

@@ -2,7 +2,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-zinc-200 bg-white">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-10 text-sm text-zinc-600 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-        <p>© {new Date().getFullYear()} Video University. Built with Next.js.</p>
+        <p>© {new Date().getFullYear()} Video Learning. Built with Next.js.</p>
         <div className="flex gap-4">
           <a
             href="https://nextjs.org/"

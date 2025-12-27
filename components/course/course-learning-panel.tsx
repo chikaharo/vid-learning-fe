@@ -42,6 +42,7 @@ export function CourseLearningPanel({
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const [quizSubmitted, setQuizSubmitted] = useState(false);
 	const [timeLeft, setTimeLeft] = useState<number | null>(null);
+	const [searchQuery, setSearchQuery] = useState("");
 
 	// Reset active quiz details when switching items
 	useEffect(() => {
@@ -181,6 +182,26 @@ export function CourseLearningPanel({
 			},
 		];
 	}, [course.modules, lessons, quizzes]);
+
+	const filteredCurriculumGroups = useMemo(() => {
+		if (!searchQuery.trim()) {
+			return curriculumGroups;
+		}
+		const lowerQuery = searchQuery.toLowerCase();
+		return curriculumGroups
+			.map((group) => ({
+				...group,
+				items: group.items.filter((item) => {
+					if (item.type === "lesson") {
+						return (item.data as Lesson).title
+							.toLowerCase()
+							.includes(lowerQuery);
+					}
+					return (item.data as Quiz).title.toLowerCase().includes(lowerQuery);
+				}),
+			}))
+			.filter((group) => group.items.length > 0);
+	}, [curriculumGroups, searchQuery]);
 
 	const currentLesson =
 		activeItem?.type === "lesson"
@@ -408,9 +429,18 @@ export function CourseLearningPanel({
 						<p className="text-xs text-zinc-500">
 							{lessons.length} lessons · {course.durationMinutes} minutes
 						</p>
+						<div className="mt-4">
+							<input
+								type="text"
+								placeholder="Search content..."
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none transition focus:border-zinc-400 focus:bg-white"
+							/>
+						</div>
 					</div>
 					<div className="flex-1 overflow-y-auto px-4 py-4">
-						{curriculumGroups.map((group) => (
+						{filteredCurriculumGroups.map((group) => (
 							<details key={group.id} open className="group mb-4">
 								<summary className="flex cursor-pointer list-none items-center justify-between px-2 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 outline-none hover:text-zinc-700">
 									{group.title}

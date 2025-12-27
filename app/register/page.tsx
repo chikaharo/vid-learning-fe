@@ -13,7 +13,7 @@ export default function RegisterPage() {
           Start teaching & learning
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-zinc-900">
-          Create your Video University account
+          Create your Video Learning account
         </h1>
         <p className="text-sm text-zinc-600">
           Accounts map to the NestJS `/users` endpoint. Passwords must be 8+

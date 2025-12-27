@@ -9,8 +9,8 @@ const siteUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Video University — Udemy-style learning built with Next.js",
-    template: "%s | Video University",
+    default: "Video Learning — Udemy-style learning built with Next.js",
+    template: "%s | Video Learning",
   },
   description:
     "A Udemy-inspired video learning experience powered by Next.js, Tailwind CSS, and a NestJS backend.",

@@ -1,4 +1,4 @@
-# Video University — Next.js Frontend
+# Video Learning — Next.js Frontend
 
 Udemy-inspired video learning experience for the `vid-learning-api` NestJS backend. The UI mirrors course marketplaces: marketing homepage, catalog filters, detailed course pages, learner dashboard, and auth flows. Everything is Static Site Export (Next.js `output: "export"`) so you can ship the build straight to S3 + CloudFront.
 
