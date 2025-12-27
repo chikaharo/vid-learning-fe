@@ -17,6 +17,7 @@ import {
 } from "@/lib/session";
 import type { Course } from "@/types/course";
 import { CourseEnrollModal } from "./course-enroll-modal";
+import Image from "next/image";
 
 interface CourseSidebarProps {
 	course: Course;
@@ -163,8 +164,22 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 		<>
 			<aside className="sticky top-28 rounded-3xl border border-zinc-200 bg-white p-6 shadow-lg">
 				<div
-					className={`h-48 rounded-2xl bg-gradient-to-br ${course.thumbnailColor}`}
-				/>
+					className={`h-48 rounded-2xl bg-gradient-to-br flex ${course.thumbnailColor}`}
+				>
+					{course.thumbnailUrl ? (
+						<Image
+							src={course.thumbnailUrl}
+							alt={course.title}
+							width={192}
+							height={192}
+							className="h-full w-full object-cover"
+						/>
+					) : (
+						<div className="h-full w-full flex items-center justify-center bg-zinc-100">
+							<span className="text-sm text-zinc-500">No image</span>
+						</div>
+					)}
+				</div>
 				<div className="mt-6 space-y-4">
 					<p className="text-3xl font-semibold text-zinc-900">{price}</p>
 					{status && (

@@ -15,6 +15,13 @@ import type {
 } from "@/types/course";
 import { fetchFromApi } from "./api";
 
+interface ApiModule {
+	id: string;
+	title: string;
+	description?: string;
+	lessons: ApiLesson[];
+}
+
 export interface ApiCourse {
 	id: string;
 	title: string;
@@ -25,6 +32,9 @@ export interface ApiCourse {
 	tags: string[];
 	thumbnailUrl?: string;
 	isPublished: boolean;
+	whatYouWillLearn?: string[];
+	modules?: ApiModule[];
+	lessons?: ApiLesson[];
 	instructor?: {
 		id: string;
 		name?: string;
@@ -49,6 +59,21 @@ interface ApiLesson {
 	content?: string | null;
 }
 
+interface ApiQuizOption {
+	id: string;
+	label: string;
+	isCorrect: boolean;
+	explanation?: string;
+}
+
+interface ApiQuizQuestion {
+	id: string;
+	prompt: string;
+	points: number;
+	order: number;
+	options: ApiQuizOption[];
+}
+
 interface ApiQuiz {
 	id: string;
 	title: string;
@@ -57,6 +82,7 @@ interface ApiQuiz {
 	isPublished: boolean;
 	courseId: string;
 	lessonId?: string | null;
+	questions?: ApiQuizQuestion[];
 	createdAt?: string;
 	updatedAt?: string;
 }
@@ -79,6 +105,15 @@ const MOCK_METRICS = {
 };
 
 const currency = "USD";
+
+function transformModule(apiModule: ApiModule): Course["modules"][0] {
+	return {
+		id: apiModule.id,
+		title: apiModule.title,
+		description: apiModule.description ?? "",
+		lessons: apiModule.lessons ? apiModule.lessons.map(transformLesson) : [],
+	};
+}
 
 export function transformCourse(apiCourse: ApiCourse): Course {
 	const metadata = apiCourse.metadata ?? {};
@@ -133,17 +168,18 @@ export function transformCourse(apiCourse: ApiCourse): Course {
 			"Downloadable resources",
 			"Career-ready projects",
 		],
-		whatYouWillLearn: (metadata.whatYouWillLearn as string[]) ?? [
-			"Ship a video learning MVP",
-			"Model courses, lessons, and enrollments",
-			"Design dashboards learners love",
-		],
+		whatYouWillLearn: apiCourse.whatYouWillLearn ??
+			(metadata.whatYouWillLearn as string[]) ?? [
+				"Ship a video learning MVP",
+				"Model courses, lessons, and enrollments",
+				"Design dashboards learners love",
+			],
 		requirements: (metadata.requirements as string[]) ?? [
 			"Basic JavaScript knowledge",
 			"Curiosity to learn",
 		],
-		modules: [],
-		lessons: [],
+		modules: apiCourse.modules ? apiCourse.modules.map(transformModule) : [],
+		lessons: apiCourse.lessons ? apiCourse.lessons.map(transformLesson) : [],
 	};
 }
 
@@ -173,6 +209,18 @@ function transformQuiz(apiQuiz: ApiQuiz): Quiz {
 		isPublished: apiQuiz.isPublished ?? false,
 		courseId: apiQuiz.courseId,
 		lessonId: apiQuiz.lessonId ?? null,
+		questions: apiQuiz.questions?.map((q) => ({
+			id: q.id,
+			prompt: q.prompt,
+			points: q.points,
+			order: q.order,
+			options: q.options?.map((o) => ({
+				id: o.id,
+				label: o.label,
+				isCorrect: o.isCorrect,
+				explanation: o.explanation,
+			})) ?? [],
+		})),
 		createdAt: apiQuiz.createdAt ?? new Date().toISOString(),
 		updatedAt:
 			apiQuiz.updatedAt ?? apiQuiz.createdAt ?? new Date().toISOString(),
@@ -245,7 +293,7 @@ async function tryFetchCourseBySlug(slug: string): Promise<Course | null> {
 	try {
 		const apiCourse = await fetchFromApi<ApiCourse>(
 			`/courses/slug/${slug}`,
-			{ cache: "force-cache" },
+			{ cache: "no-store" },
 			{ fallbackToMock: false }
 		);
 		return apiCourse ? transformCourse(apiCourse) : null;
@@ -323,15 +371,21 @@ export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
 	if (!courseId) {
 		return [];
 	}
-	const apiLessons = await fetchFromApi<ApiLesson[]>(
-		`/lessons/course/${courseId}`,
-		{ cache: "no-store" },
-		{ fallbackToMock: false }
-	);
-	if (!apiLessons || !apiLessons.length) {
+	try {
+		const apiLessons = await fetchFromApi<ApiLesson[]>(
+			`/lessons/course/${courseId}?t=${Date.now()}`,
+			{ cache: "no-store" },
+			{ fallbackToMock: true }
+		);
+		console.log("API Lessons:", apiLessons);
+		if (!apiLessons || !apiLessons.length) {
+			return [];
+		}
+		return apiLessons.map(transformLesson);
+	} catch (error) {
+		console.error("Failed to get lessons:", error);
 		return [];
 	}
-	return apiLessons.map(transformLesson);
 }
 
 export async function createLesson(payload: LessonPayload): Promise<Lesson> {
@@ -387,7 +441,7 @@ export async function getLesson(id: string): Promise<Lesson | null> {
 	const apiLesson = await fetchFromApi<ApiLesson>(
 		`/lessons/${id}`,
 		{ cache: "force-cache" },
-		{ fallbackToMock: false }
+		{ fallbackToMock: true }
 	);
 	return apiLesson ? transformLesson(apiLesson) : null;
 }
@@ -397,9 +451,9 @@ export async function getQuizzesForCourse(courseId: string): Promise<Quiz[]> {
 		return [];
 	}
 	const apiQuizzes = await fetchFromApi<ApiQuiz[]>(
-		`/quizzes/course/${courseId}`,
+		`/quizzes/course/${courseId}?t=${Date.now()}`,
 		{ cache: "no-store" },
-		{ fallbackToMock: false }
+		{ fallbackToMock: true }
 	);
 	if (!apiQuizzes || !apiQuizzes.length) {
 		return [];
@@ -460,7 +514,7 @@ export async function getQuiz(id: string): Promise<Quiz | null> {
 	const apiQuiz = await fetchFromApi<ApiQuiz>(
 		`/quizzes/${id}`,
 		{ cache: "force-cache" },
-		{ fallbackToMock: false }
+		{ fallbackToMock: true }
 	);
 	return apiQuiz ? transformQuiz(apiQuiz) : null;
 }
@@ -471,6 +525,18 @@ export async function fetchLiveCourses(): Promise<Course[]> {
 		throw new Error("Unable to load courses from the API.");
 	}
 	return liveCourses;
+}
+
+export async function getInstructorCourses(): Promise<Course[]> {
+	const apiCourses = await fetchFromApi<ApiCourse[]>(
+		"/courses/instructor/me",
+		{ cache: "no-store" },
+		{ fallbackToMock: false, auth: true }
+	);
+	if (!apiCourses || !apiCourses.length) {
+		return [];
+	}
+	return apiCourses.map(transformCourse);
 }
 
 export async function getAllCourses(options?: {

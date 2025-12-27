@@ -810,236 +810,236 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			)}
 
 			{selectedCourse && (
-				<div className="grid gap-6 lg:grid-cols-2">
+				<div className="space-y-8">
 					<section className="rounded-3xl border border-zinc-200 bg-white p-6">
 						<header className="space-y-1">
 							<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-								Lessons · {lessons.length}
+								Content · {lessons.length + quizzes.length} items
 							</p>
 							<h3 className="text-xl font-semibold text-zinc-900">
-								Curriculum builder
+								Course content
 							</h3>
 						</header>
-						<div className="mt-4 space-y-2">
-							{lessonsLoading ? (
-								<p className="text-sm text-zinc-500">Loading lessons…</p>
-							) : lessons.length === 0 ? (
-								<p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-500">
-									No lessons yet. Use the form below to add the first one.
-								</p>
+						
+						<div className="mt-6 flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+							{lessonsLoading || quizzesLoading ? (
+								<div className="flex w-full items-center justify-center py-8">
+									<p className="text-sm text-zinc-500">Loading content…</p>
+								</div>
+							) : lessons.length === 0 && quizzes.length === 0 ? (
+								<div className="w-full rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
+									No content yet. Use the forms below to add lessons and quizzes.
+								</div>
 							) : (
-								<ul className="space-y-2">
+								<>
 									{lessons.map((lesson) => (
-										<li
-											key={lesson.id}
-											className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-2"
+										<div
+											key={`lesson-${lesson.id}`}
+											className="min-w-[280px] flex-none rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300"
 										>
-											<div>
-												<p className="text-sm font-semibold text-zinc-900">
-													#{lesson.order ?? 0} · {lesson.title}
-												</p>
-												<p className="text-xs uppercase tracking-wide text-zinc-500">
-													{lesson.durationMinutes} min ·{" "}
-													{lesson.isPreview ? "Preview" : "Locked"}
-												</p>
+											<div className="mb-3 flex items-start justify-between">
+												<span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700">
+													Lesson
+												</span>
+												<div className="flex items-center gap-1">
+													<button
+														type="button"
+														onClick={() => handleLessonDelete(lesson.id)}
+														disabled={
+															disableMutations || lessonDeletingId === lesson.id
+														}
+														className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+													>
+														{lessonDeletingId === lesson.id ? "..." : "Delete"}
+													</button>
+												</div>
 											</div>
-											<button
-												type="button"
-												onClick={() => handleLessonDelete(lesson.id)}
-												disabled={
-													disableMutations || lessonDeletingId === lesson.id
-												}
-												className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
-											>
-												{lessonDeletingId === lesson.id ? "Deleting…" : "Remove"}
-											</button>
-										</li>
+											<p className="font-semibold text-zinc-900 line-clamp-1">
+												#{lesson.order ?? 0} · {lesson.title}
+											</p>
+											<p className="mt-1 text-xs text-zinc-500">
+												{lesson.durationMinutes} min ·{" "}
+												{lesson.isPreview ? "Preview" : "Locked"}
+											</p>
+										</div>
 									))}
-								</ul>
+									{quizzes.map((quiz) => (
+										<div
+											key={`quiz-${quiz.id}`}
+											className="min-w-[280px] flex-none rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300"
+										>
+											<div className="mb-3 flex items-start justify-between">
+												<span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+													Quiz
+												</span>
+												<div className="flex items-center gap-1">
+													<button
+														type="button"
+														onClick={() => handleQuizDelete(quiz.id)}
+														disabled={
+															disableMutations || quizDeletingId === quiz.id
+														}
+														className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+													>
+														{quizDeletingId === quiz.id ? "..." : "Delete"}
+													</button>
+												</div>
+											</div>
+											<p className="font-semibold text-zinc-900 line-clamp-1">
+												{quiz.title}
+											</p>
+											<p className="mt-1 text-xs text-zinc-500">
+												{quiz.isPublished ? "Published" : "Draft"} ·{" "}
+												{quiz.timeLimitSeconds
+													? `${Math.round(quiz.timeLimitSeconds / 60)} min`
+													: "No timer"}
+											</p>
+										</div>
+									))}
+								</>
 							)}
 						</div>
-						<form className="mt-6 space-y-4" onSubmit={handleLessonSubmit}>
-							<label className="block">
-								<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-									Title
-								</span>
-								<input
-									type="text"
-									value={lessonForm.title}
-									onChange={updateLessonField("title")}
-									placeholder="Design systems for discovery"
-									className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-								/>
-							</label>
-							<div className="grid gap-4 md:grid-cols-2">
-								<label className="block">
-									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-										Duration (minutes)
-									</span>
-									<input
-										type="number"
-										min={1}
-										value={lessonForm.durationMinutes}
-										onChange={updateLessonField("durationMinutes")}
-										className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-									/>
-								</label>
-								<label className="block">
-									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-										Display order
-									</span>
-									<input
-										type="number"
-										min={0}
-										value={lessonForm.order}
-										onChange={updateLessonField("order")}
-										className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-									/>
-								</label>
-							</div>
-							<label className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700">
-								<input
-									type="checkbox"
-									checked={lessonForm.isPreview}
-									onChange={updateLessonField("isPreview")}
-									className="h-4 w-4 rounded border-zinc-300 text-violet-600"
-								/>
-								Mark as preview lesson
-							</label>
-							<button
-								type="submit"
-								disabled={disableMutations || lessonSubmitting}
-								className="w-full rounded-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-							>
-								{lessonSubmitting ? "Adding lesson…" : "Add lesson"}
-							</button>
-						</form>
 					</section>
 
-					<section className="rounded-3xl border border-zinc-200 bg-white p-6">
-						<header className="space-y-1">
-							<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-								Quizzes · {quizzes.length}
-							</p>
-							<h3 className="text-xl font-semibold text-zinc-900">
-								Assess learner progress
-							</h3>
-						</header>
-						<div className="mt-4 space-y-2">
-							{quizzesLoading ? (
-								<p className="text-sm text-zinc-500">Loading quizzes…</p>
-							) : quizzes.length === 0 ? (
-								<p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-500">
-									No quizzes yet. Keep learners engaged with a quick assessment.
-								</p>
-							) : (
-								<ul className="space-y-2">
-									{quizzes.map((quiz) => (
-										<li
-											key={quiz.id}
-											className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-2"
-										>
-											<div>
-												<p className="text-sm font-semibold text-zinc-900">
-													{quiz.title}
-												</p>
-												<p className="text-xs uppercase tracking-wide text-zinc-500">
-													{quiz.isPublished ? "Published" : "Draft"} ·{" "}
-													{quiz.timeLimitSeconds
-														? `${Math.round(
-																quiz.timeLimitSeconds / 60
-														  )} min limit`
-														: "No timer"}
-												</p>
-											</div>
-											<button
-												type="button"
-												onClick={() => handleQuizDelete(quiz.id)}
-												disabled={disableMutations || quizDeletingId === quiz.id}
-												className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
-											>
-												{quizDeletingId === quiz.id ? "Deleting…" : "Remove"}
-											</button>
-										</li>
-									))}
-								</ul>
-							)}
-						</div>
-						<form className="mt-6 space-y-4" onSubmit={handleQuizSubmit}>
-							<label className="block">
-								<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-									Title
-								</span>
-								<input
-									type="text"
-									value={quizForm.title}
-									onChange={updateQuizField("title")}
-									placeholder="Module checkpoint quiz"
-									className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-								/>
-							</label>
-							<label className="block">
-								<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-									Description
-								</span>
-								<textarea
-									value={quizForm.description}
-									onChange={updateQuizField("description")}
-									rows={3}
-									placeholder="Short note about what this quiz covers."
-									className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-								/>
-							</label>
-							<div className="grid gap-4 md:grid-cols-2">
+					<div className="grid gap-6 lg:grid-cols-2">
+						<section className="rounded-3xl border border-zinc-200 bg-white p-6">
+							<h3 className="text-lg font-semibold text-zinc-900">Add Lesson</h3>
+							<form className="mt-6 space-y-4" onSubmit={handleLessonSubmit}>
 								<label className="block">
 									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-										Time limit (seconds)
+										Title
 									</span>
 									<input
-										type="number"
-										min={60}
-										step={30}
-										value={quizForm.timeLimitSeconds}
-										onChange={updateQuizField("timeLimitSeconds")}
+										type="text"
+										value={lessonForm.title}
+										onChange={updateLessonField("title")}
+										placeholder="Design systems for discovery"
+										className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+									/>
+								</label>
+								<div className="grid gap-4 md:grid-cols-2">
+									<label className="block">
+										<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+											Duration (minutes)
+										</span>
+										<input
+											type="number"
+											min={1}
+											value={lessonForm.durationMinutes}
+											onChange={updateLessonField("durationMinutes")}
+											className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+										/>
+									</label>
+									<label className="block">
+										<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+											Display order
+										</span>
+										<input
+											type="number"
+											min={0}
+											value={lessonForm.order}
+											onChange={updateLessonField("order")}
+											className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+										/>
+									</label>
+								</div>
+								<label className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700">
+									<input
+										type="checkbox"
+										checked={lessonForm.isPreview}
+										onChange={updateLessonField("isPreview")}
+										className="h-4 w-4 rounded border-zinc-300 text-violet-600"
+									/>
+									Mark as preview lesson
+								</label>
+								<button
+									type="submit"
+									disabled={disableMutations || lessonSubmitting}
+									className="w-full rounded-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+								>
+									{lessonSubmitting ? "Adding lesson…" : "Add lesson"}
+								</button>
+							</form>
+						</section>
+
+						<section className="rounded-3xl border border-zinc-200 bg-white p-6">
+							<h3 className="text-lg font-semibold text-zinc-900">Add Quiz</h3>
+							<form className="mt-6 space-y-4" onSubmit={handleQuizSubmit}>
+								<label className="block">
+									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+										Title
+									</span>
+									<input
+										type="text"
+										value={quizForm.title}
+										onChange={updateQuizField("title")}
+										placeholder="Module checkpoint quiz"
 										className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
 									/>
 								</label>
 								<label className="block">
 									<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-										Linked lesson (optional)
+										Description
 									</span>
-									<select
-										value={quizForm.lessonId}
-										onChange={updateQuizField("lessonId")}
+									<textarea
+										value={quizForm.description}
+										onChange={updateQuizField("description")}
+										rows={3}
+										placeholder="Short note about what this quiz covers."
 										className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-									>
-										<option value="">Entire course</option>
-										{lessons.map((lesson) => (
-											<option key={lesson.id} value={lesson.id}>
-												#{lesson.order ?? 0} · {lesson.title}
-											</option>
-										))}
-									</select>
+									/>
 								</label>
-							</div>
-							<label className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700">
-								<input
-									type="checkbox"
-									checked={quizForm.isPublished}
-									onChange={updateQuizField("isPublished")}
-									className="h-4 w-4 rounded border-zinc-300 text-violet-600"
-								/>
-								Publish quiz immediately
-							</label>
-							<button
-								type="submit"
-								disabled={disableMutations || quizSubmitting}
-								className="w-full rounded-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-							>
-								{quizSubmitting ? "Creating quiz…" : "Create quiz"}
-							</button>
-						</form>
-					</section>
+								<div className="grid gap-4 md:grid-cols-2">
+									<label className="block">
+										<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+											Time limit (seconds)
+										</span>
+										<input
+											type="number"
+											min={60}
+											step={30}
+											value={quizForm.timeLimitSeconds}
+											onChange={updateQuizField("timeLimitSeconds")}
+											className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+										/>
+									</label>
+									<label className="block">
+										<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+											Linked lesson (optional)
+										</span>
+										<select
+											value={quizForm.lessonId}
+											onChange={updateQuizField("lessonId")}
+											className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+										>
+											<option value="">Entire course</option>
+											{lessons.map((lesson) => (
+												<option key={lesson.id} value={lesson.id}>
+													#{lesson.order ?? 0} · {lesson.title}
+												</option>
+											))}
+										</select>
+									</label>
+								</div>
+								<label className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700">
+									<input
+										type="checkbox"
+										checked={quizForm.isPublished}
+										onChange={updateQuizField("isPublished")}
+										className="h-4 w-4 rounded border-zinc-300 text-violet-600"
+									/>
+									Publish quiz immediately
+								</label>
+								<button
+									type="submit"
+									disabled={disableMutations || quizSubmitting}
+									className="w-full rounded-full bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+								>
+									{quizSubmitting ? "Creating quiz…" : "Create quiz"}
+								</button>
+							</form>
+						</section>
+					</div>
 				</div>
 			)}
 		</div>

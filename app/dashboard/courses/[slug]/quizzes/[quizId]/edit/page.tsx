@@ -15,17 +15,22 @@ interface EditQuizPageProps {
 }
 
 export async function generateStaticParams() {
-	const courses = await getAllCourses({ live: true, fallbackToMock: true });
-	const params = [];
+	try {
+		const courses = await getAllCourses({ live: true, fallbackToMock: true });
+		const params = [];
 
-	for (const course of courses) {
-		const quizzes = await getQuizzesForCourse(course.id);
-		for (const quiz of quizzes) {
-			params.push({ slug: course.slug, quizId: quiz.id });
+		for (const course of courses) {
+			const quizzes = await getQuizzesForCourse(course.id);
+			for (const quiz of quizzes) {
+				params.push({ slug: course.slug, quizId: quiz.id });
+			}
 		}
-	}
 
-	return params;
+		return params;
+	} catch (error) {
+		console.error("Error generating params for edit quiz page:", error);
+		return [];
+	}
 }
 
 export default async function EditQuizPage({ params }: EditQuizPageProps) {
@@ -34,7 +39,7 @@ export default async function EditQuizPage({ params }: EditQuizPageProps) {
 	if (!course) {
 		notFound();
 	}
-	// TODO: Add preferLive to getQuiz
+	
 	const quiz = await getQuiz(quizId);
 	if (!quiz || quiz.courseId !== course.id) {
 		notFound();

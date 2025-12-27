@@ -1,5 +1,6 @@
 import type { Course } from "@/types/course";
 import Link from "next/link";
+import Image from "next/image";
 
 interface CourseCardProps {
   course: Course;
@@ -12,9 +13,20 @@ export function CourseCard({ course, showCategory = true }: CourseCardProps) {
       href={`/courses/${course.slug}`}
       className="group flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
     >
-      <div
-        className={`h-44 rounded-xl bg-gradient-to-br ${course.thumbnailColor}`}
-      />
+      {course.thumbnailUrl ? (
+        <div className="relative h-44 w-full overflow-hidden rounded-xl">
+          <Image
+            src={course.thumbnailUrl}
+            alt={course.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+      ) : (
+        <div
+          className={`h-44 rounded-xl bg-gradient-to-br ${course.thumbnailColor}`}
+        />
+      )}
       <div className="flex flex-col gap-2">
         {showCategory && course.categories.length > 0 && (
           <span className="w-fit rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
