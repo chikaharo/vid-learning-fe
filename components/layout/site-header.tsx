@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useSyncExternalStore } from "react";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 import {
   AUTH_EVENT,
@@ -68,6 +69,15 @@ export function SiteHeader() {
     router.push("/");
   }
 
+  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const query = formData.get("search");
+    if (typeof query === "string" && query.trim()) {
+      router.push(`/courses?q=${encodeURIComponent(query)}`);
+    }
+  }
+
   return (
     <header className="sticky top-0 z-20 border-b border-zinc-200/70 bg-white/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 lg:px-8">
@@ -80,6 +90,23 @@ export function SiteHeader() {
             <span className="text-xs text-zinc-500">University</span>
           </div>
         </Link>
+        <form
+          onSubmit={handleSearch}
+          className="hidden md:flex flex-1 max-w-md mx-8"
+        >
+          <div className="relative w-full text-zinc-500 focus-within:text-zinc-900">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <MagnifyingGlassIcon className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <input
+              name="search"
+              id="search"
+              className="block w-full rounded-full border border-zinc-200 bg-zinc-50 py-2 pl-10 pr-3 text-sm placeholder-zinc-500 focus:border-zinc-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:text-sm"
+              placeholder="Search courses..."
+              type="search"
+            />
+          </div>
+        </form>
         <nav className="hidden items-center gap-6 text-sm font-medium text-zinc-600 md:flex">
           {navigation.map((item) => (
             <Link

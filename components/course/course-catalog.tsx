@@ -1,6 +1,7 @@
 'use client';
 
 import type { Course } from "@/types/course";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CourseCard } from "./course-card";
 
@@ -10,9 +11,20 @@ interface CourseCatalogProps {
 }
 
 export function CourseCatalog({ courses, categories }: CourseCatalogProps) {
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const initialQ = searchParams.get("q");
+  const [query, setQuery] = useState(initialQ ?? "");
+  const [prevQ, setPrevQ] = useState(initialQ);
   const [level, setLevel] = useState<string>("all");
   const [category, setCategory] = useState<string>("all");
+
+  const q = searchParams.get("q");
+  if (q !== prevQ) {
+    setPrevQ(q);
+    if (q !== null) {
+      setQuery(q);
+    }
+  }
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course) => {
