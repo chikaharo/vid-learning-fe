@@ -1,12 +1,12 @@
 import { CourseManager } from "@/components/course/course-manager";
-import { getAllCourses } from "@/lib/content-service";
+import { getAllCourses, getInstructorCourses } from "@/lib/content-service";
 
 export const metadata = {
 	title: "Course builder",
 };
 
 export default async function CourseManagePage() {
-	const courses = await getAllCourses({ live: true });
+	const courses = await getInstructorCourses();
 
 	return (
 		<div className="space-y-8">

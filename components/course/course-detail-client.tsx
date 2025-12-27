@@ -60,6 +60,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 		])
 			.then(([lessonData, quizData]) => {
 				if (ignore) return;
+				console.log({ lessonData, quizData });
 				setLessons(sortLessons(lessonData));
 				setQuizzes(sortQuizzes(quizData));
 			})

@@ -65,6 +65,7 @@ const createCourse = ({
 	durationMinutes,
 	instructorId,
 	thumbnailColor,
+	thumbnailUrl,
 }: {
 	id: string;
 	title: string;
@@ -75,6 +76,7 @@ const createCourse = ({
 	durationMinutes: number;
 	instructorId: string;
 	thumbnailColor: string;
+	thumbnailUrl?: string;
 }): Course => {
 	const instructor = instructors.find((it) => it.id === instructorId)!;
 	return {
@@ -95,7 +97,7 @@ const createCourse = ({
 		currency: "USD",
 		language: "English",
 		tags: ["video", "learning", "frontend", "design"],
-		thumbnailUrl: null,
+		thumbnailUrl: thumbnailUrl ?? null,
 		thumbnailColor,
 		updatedAt: "2025-01-04T00:00:00.000Z",
 		instructor,
@@ -166,6 +168,7 @@ export const courses: Course[] = [
 		durationMinutes: 640,
 		instructorId: "inst-1",
 		thumbnailColor: "from-purple-500 via-fuchsia-500 to-orange-400",
+		thumbnailUrl: "https://placehold.co/600x400/png",
 	}),
 	createCourse({
 		id: "course-2",

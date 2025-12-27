@@ -224,6 +224,7 @@ export function LessonForm({
 				await updateLesson(initialLesson.id, payload);
 				setStatus("Lesson updated. Redirecting…");
 			}
+			router.refresh();
 			setTimeout(() => router.push(`/dashboard/courses/${courseSlug}`), 800);
 		} catch (err) {
 			setError(
