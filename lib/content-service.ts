@@ -303,7 +303,6 @@ async function tryFetchCourseBySlug(slug: string): Promise<Course | null> {
 			{ cache: "no-store" },
 			{ fallbackToMock: false }
 		);
-		console.log("API Course:", apiCourse);
 		return apiCourse ? transformCourse(apiCourse) : null;
 	} catch (error) {
 		console.warn(`Failed to fetch course by slug "${slug}" from API`, error);
@@ -385,7 +384,6 @@ export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
 			{ cache: "no-store" },
 			{ fallbackToMock: true }
 		);
-		console.log("API Lessons:", apiLessons);
 		if (!apiLessons || !apiLessons.length) {
 			return [];
 		}
@@ -566,7 +564,6 @@ export async function getAllCourses(options?: {
 		{ fallbackToMock }
 	);
 	if (apiCourses && apiCourses.length) {
-		console.log("Fetched courses from API:", apiCourses);
 		return apiCourses.map(transformCourse);
 	}
 	return fallbackToMock ? courses : [];

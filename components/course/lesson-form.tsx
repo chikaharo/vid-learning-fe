@@ -13,6 +13,8 @@ import {
 	createLesson,
 	updateLesson,
 	uploadLessonVideo,
+	getLessonsForCourse,
+	getQuizzesForCourse,
 	type LessonPayload,
 } from "@/lib/content-service";
 import type { Lesson } from "@/types/course";
@@ -48,6 +50,19 @@ export function LessonForm({
 		order: String(initialLesson?.order ?? 0),
 		isPreview: Boolean(initialLesson?.isPreview),
 	});
+
+	// Auto-calculate order for new lessons
+	useEffect(() => {
+		if (mode === "create") {
+			Promise.all([
+				getLessonsForCourse(courseId),
+				getQuizzesForCourse(courseId),
+			]).then(([lessons, quizzes]) => {
+				const nextOrder = lessons.length + quizzes.length;
+				setForm((prev) => ({ ...prev, order: String(nextOrder) }));
+			});
+		}
+	}, [mode, courseId]);
 
 	const [videoSource, setVideoSource] = useState<"upload" | "external">(
 		inferVideoSource(initialLesson?.videoUrl)
@@ -235,9 +250,7 @@ export function LessonForm({
 		}
 	}
 
-	useEffect(() => {
-		console.log("is submitting:", isSubmitting);
-	}, [isSubmitting]);
+	useEffect(() => {}, [isSubmitting]);
 
 	return (
 		<form className="space-y-4" onSubmit={handleSubmit}>

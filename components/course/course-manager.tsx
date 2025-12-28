@@ -406,11 +406,13 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			return;
 		}
 
+		const nextOrder = lessons.length + quizzes.length;
+
 		const payload: LessonPayload = {
 			title: lessonForm.title.trim(),
 			courseId: selectedCourseId,
 			durationMinutes: Number(lessonForm.durationMinutes) || 5,
-			order: Number(lessonForm.order) || 0,
+			order: nextOrder,
 			isPreview: lessonForm.isPreview,
 		};
 
@@ -481,6 +483,8 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			return;
 		}
 
+		const nextOrder = lessons.length + quizzes.length;
+
 		const payload: QuizPayload = {
 			title: quizForm.title.trim(),
 			courseId: selectedCourseId,
@@ -488,6 +492,7 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			lessonId: quizForm.lessonId || undefined,
 			timeLimitSeconds: Number(quizForm.timeLimitSeconds) || undefined,
 			isPublished: quizForm.isPublished,
+			order: nextOrder,
 		};
 
 		setQuizSubmitting(true);
@@ -927,18 +932,6 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 											min={1}
 											value={lessonForm.durationMinutes}
 											onChange={updateLessonField("durationMinutes")}
-											className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-										/>
-									</label>
-									<label className="block">
-										<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-											Display order
-										</span>
-										<input
-											type="number"
-											min={0}
-											value={lessonForm.order}
-											onChange={updateLessonField("order")}
 											className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
 										/>
 									</label>

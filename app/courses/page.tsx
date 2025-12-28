@@ -1,5 +1,6 @@
 import { CourseCatalog } from "@/components/course/course-catalog";
 import { getAllCourses, getCategories } from "@/lib/content-service";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Course catalog",
@@ -25,7 +26,9 @@ export default async function CoursesPage() {
         </p>
       </header>
 
-      <CourseCatalog courses={courses} categories={categories} />
+      <Suspense fallback={<div>Loading catalog...</div>}>
+        <CourseCatalog courses={courses} categories={categories} />
+      </Suspense>
     </div>
   );
 }
