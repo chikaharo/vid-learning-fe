@@ -83,8 +83,8 @@ jobs:
               "# 4. Create ENV file",
               "echo \"${{ secrets.ENV_FILE }}\" > ${{ env.PROJECT_PATH }}/.env",
 
-              "# 5. Install Production Deps",
-              "su - ec2-user -c \"cd ${{ env.PROJECT_PATH }} && npm install --production\"",
+              "# 5. Install Dependencies",
+              "su - ec2-user -c \"cd ${{ env.PROJECT_PATH }} && npm install\"",
 
               "# 6. Restart Application with PM2",
               "su - ec2-user -c \"pm2 delete vid-learning-frontend || true\"",
