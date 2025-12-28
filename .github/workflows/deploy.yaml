@@ -87,7 +87,8 @@ jobs:
               "su - ec2-user -c \"cd ${{ env.PROJECT_PATH }} && npm install --production\"",
 
               "# 6. Restart Application with PM2",
-              "su - ec2-user -c \"pm2 restart vid-learning-frontend || cd ${{ env.PROJECT_PATH }} && pm2 start npm --name vid-learning-frontend -- start\"",
+              "su - ec2-user -c \"pm2 delete vid-learning-frontend || true\"",
+              "su - ec2-user -c \"cd ${{ env.PROJECT_PATH }} && pm2 start npm --name vid-learning-frontend -- start\"",
               "su - ec2-user -c \"pm2 save\"",
 
               "echo Deployment Complete"
