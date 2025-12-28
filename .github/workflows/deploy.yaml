@@ -72,7 +72,7 @@ jobs:
               "mkdir -p ${{ env.PROJECT_PATH }}",
 
               "# 2. Clean the directory",
-              "cd /var/www/vid-learning/vid-learning-fe && find . -mindepth 1 ! -name '.env' -exec rm -rf {} +",
+              "cd /var/www/vid-learning/vid-learning-fe && find . -mindepth 1 ! -name \".env\" -exec rm -rf {} +",
 
               "# 2. Download from S3",
               "su - ec2-user -c \"aws s3 cp s3://${{ env.S3_BUCKET }}/builds/${{ github.sha }}.zip /tmp/deployment.zip\"",
@@ -87,7 +87,7 @@ jobs:
               "su - ec2-user -c \"cd ${{ env.PROJECT_PATH }} && npm install --production\"",
 
               "# 6. Restart Application with PM2",
-              "if ! su - ec2-user -c 'npm list -g serve'; then su - ec2-user -c 'npm install -g serve'; fi",
+              "if ! su - ec2-user -c \"npm list -g serve\"; then su - ec2-user -c \"npm install -g serve\"; fi",
               "su - ec2-user -c \"pm2 restart vid-learning-fe || cd ${{ env.PROJECT_PATH }} && pm2 start serve --name vid-learning-frontend -- -s out -p 3000\"",
               "su - ec2-user -c \"pm2 save\"",
 
