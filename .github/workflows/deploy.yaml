@@ -69,7 +69,7 @@ jobs:
               "export AWS_DEFAULT_REGION=${{ env.AWS_REGION }}",
 
               "# 1. Create directory if not exists",
-              "mkdir -p ${{ env.PROJECT_PATH }}",
+              "su - ec2-user -c \"mkdir -p ${{ env.PROJECT_PATH }}\"",
 
               "# 2. Clean the directory",
               "cd /var/www/vid-learning/vid-learning-fe && find . -mindepth 1 ! -name \".env\" -exec rm -rf {} +",
