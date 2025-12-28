@@ -39,7 +39,6 @@ jobs:
 
       - name: Zip Artifact
         run: |
-          # zip -r deployment-fe-package.zip .next out package.json package-lock.json
           zip -r deployment-fe-package.zip .next public next.config.ts package.json package-lock.json
 
       - name: Configure AWS Credentials
@@ -88,8 +87,6 @@ jobs:
               "su - ec2-user -c \"cd ${{ env.PROJECT_PATH }} && npm install --production\"",
 
               "# 6. Restart Application with PM2",
-              # "if ! su - ec2-user -c \"npm list -g serve\"; then su - ec2-user -c \"npm install -g serve\"; fi",
-              # "su - ec2-user -c \"pm2 restart vid-learning-fe || cd ${{ env.PROJECT_PATH }} && pm2 start serve --name vid-learning-frontend -- -s out -p 3000\"",
               "su - ec2-user -c \"pm2 restart vid-learning-frontend || cd ${{ env.PROJECT_PATH }} && pm2 start npm --name vid-learning-frontend -- start\"",
               "su - ec2-user -c \"pm2 save\"",
 
