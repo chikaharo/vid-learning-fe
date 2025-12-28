@@ -37,20 +37,22 @@ interface CourseDetailClientProps {
 	course: Course;
 }
 
-type ContentItem =
-	| (Lesson & { type: "lesson" })
-	| (Quiz & { type: "quiz" });
+type ContentItem = (Lesson & { type: "lesson" }) | (Quiz & { type: "quiz" });
 
 function sortContent(list: ContentItem[]) {
-	return [...list].sort((a, b) => {
-		const orderDiff = (a.order ?? 0) - (b.order ?? 0);
-		if (orderDiff !== 0) {
-			return orderDiff;
-		}
-		const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-		const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-		return aTime - bTime;
+	console.log("Before Sorting content", list);
+	const afterSorted = [...list].sort((a, b) => {
+		// const orderDiff = (a.order ?? 0) - (b.order ?? 0);
+		// if (orderDiff !== 0) {
+		// 	return orderDiff;
+		// }
+		// const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+		// const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+		// return aTime - bTime;
+		return (a.order ?? 0) - (b.order ?? 0);
 	});
+	console.log("After Sorting content", afterSorted);
+	return afterSorted;
 }
 
 function SortableItem({
@@ -367,7 +369,8 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 						<p className="text-sm text-zinc-500">Loading content…</p>
 					) : unifiedContent.length === 0 ? (
 						<p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-sm text-zinc-500">
-							No content yet. Create lessons or quizzes to build your curriculum.
+							No content yet. Create lessons or quizzes to build your
+							curriculum.
 						</p>
 					) : (
 						<DndContext

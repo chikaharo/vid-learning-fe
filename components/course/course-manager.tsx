@@ -14,7 +14,7 @@ import {
 	deleteCourse,
 	createLesson,
 	createQuiz,
-	fetchLiveCourses,
+	getInstructorCourses,
 	getLessonsForCourse,
 	getQuizzesForCourse,
 	updateCourse,
@@ -168,6 +168,12 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 			window.removeEventListener(AUTH_EVENT, syncUser);
 		};
 	}, []);
+
+	useEffect(() => {
+		if (user) {
+			handleRefresh();
+		}
+	}, [user]);
 
 	useEffect(() => {
 		if (!selectedCourseId) {
@@ -542,7 +548,7 @@ export function CourseManager({ initialCourses }: CourseManagerProps) {
 		setIsRefreshing(true);
 		setStatus(null);
 		try {
-			const fresh = await fetchLiveCourses();
+			const fresh = await getInstructorCourses();
 			setCourses(fresh);
 			if (selectedCourseId) {
 				const stillExists = fresh.find(
