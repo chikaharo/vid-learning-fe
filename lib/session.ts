@@ -50,7 +50,6 @@ export function persistSession(session: LoginResponse) {
 
 export function getStoredUser(): StoredUser | null {
 	const raw = read(USER_KEY);
-	console.log("getStoredUser raw:", raw);
 	if (!raw) return null;
 	try {
 		return JSON.parse(raw) as StoredUser;

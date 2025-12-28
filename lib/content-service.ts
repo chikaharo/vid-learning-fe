@@ -12,6 +12,7 @@ import type {
 	Lesson,
 	Quiz,
 	Testimonial,
+	Review,
 } from "@/types/course";
 import { fetchFromApi } from "./api";
 
@@ -80,6 +81,7 @@ interface ApiQuiz {
 	description?: string;
 	timeLimitSeconds?: number;
 	isPublished: boolean;
+	order?: number;
 	courseId: string;
 	lessonId?: string | null;
 	questions?: ApiQuizQuestion[];
@@ -213,6 +215,7 @@ function transformQuiz(apiQuiz: ApiQuiz): Quiz {
 		description: apiQuiz.description,
 		timeLimitSeconds: apiQuiz.timeLimitSeconds,
 		isPublished: apiQuiz.isPublished ?? false,
+		order: apiQuiz.order ?? 0,
 		courseId: apiQuiz.courseId,
 		lessonId: apiQuiz.lessonId ?? null,
 		questions: apiQuiz.questions?.map((q) => ({
@@ -268,6 +271,7 @@ export interface QuizPayload {
 	courseId: string;
 	description?: string;
 	lessonId?: string;
+	order?: number;
 	timeLimitSeconds?: number;
 	isPublished?: boolean;
 	questions?: QuizQuestionPayload[];
@@ -303,7 +307,6 @@ async function tryFetchCourseBySlug(slug: string): Promise<Course | null> {
 			{ cache: "no-store" },
 			{ fallbackToMock: false }
 		);
-		console.log("API Course:", apiCourse);
 		return apiCourse ? transformCourse(apiCourse) : null;
 	} catch (error) {
 		console.warn(`Failed to fetch course by slug "${slug}" from API`, error);
@@ -385,7 +388,6 @@ export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
 			{ cache: "no-store" },
 			{ fallbackToMock: true }
 		);
-		console.log("API Lessons:", apiLessons);
 		if (!apiLessons || !apiLessons.length) {
 			return [];
 		}
@@ -463,6 +465,7 @@ export async function getQuizzesForCourse(courseId: string): Promise<Quiz[]> {
 		{ cache: "no-store" },
 		{ fallbackToMock: true }
 	);
+	console.log("Fetched quizzes from API:", apiQuizzes);
 	if (!apiQuizzes || !apiQuizzes.length) {
 		return [];
 	}
@@ -566,7 +569,6 @@ export async function getAllCourses(options?: {
 		{ fallbackToMock }
 	);
 	if (apiCourses && apiCourses.length) {
-		console.log("Fetched courses from API:", apiCourses);
 		return apiCourses.map(transformCourse);
 	}
 	return fallbackToMock ? courses : [];
@@ -729,4 +731,43 @@ export async function getCategories(): Promise<string[]> {
 
 export async function getLearningPaths() {
 	return learningPaths;
+}
+
+export async function getReviewsForCourse(courseId: string): Promise<Review[]> {
+	const reviews = await fetchFromApi<Review[]>(
+		`/reviews/course/${courseId}`,
+		{ cache: "no-store" },
+		{ fallbackToMock: false }
+	);
+	return reviews ?? [];
+}
+
+export async function createReview(
+	courseId: string,
+	rating: number,
+	comment: string
+): Promise<Review> {
+	const review = await fetchFromApi<Review>(
+		"/reviews",
+		{
+			method: "POST",
+			body: JSON.stringify({ courseId, rating, comment }),
+			cache: "no-store",
+		},
+		{ fallbackToMock: false, auth: true }
+	);
+	if (!review) {
+		throw new Error("Failed to create review");
+	}
+	return review;
+}
+
+export async function checkUserReview(
+	courseId: string
+): Promise<Review | null> {
+	return fetchFromApi<Review>(
+		`/reviews/me/${courseId}`,
+		{ cache: "no-store" },
+		{ fallbackToMock: false, auth: true }
+	);
 }

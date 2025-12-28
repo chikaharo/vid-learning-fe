@@ -68,7 +68,6 @@ export function QuizForm({
 
 	useEffect(() => {
 		setDisableMutations(!getStoredUser());
-		console.log("disableMutations", !getStoredUser());
 	}, []);
 
 	useEffect(() => {

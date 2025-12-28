@@ -54,6 +54,7 @@ export interface Quiz {
 	description?: string;
 	courseId: string;
 	lessonId?: string | null;
+	order?: number;
 	timeLimitSeconds?: number;
 	isPublished: boolean;
 	questions?: QuizQuestion[];
@@ -110,4 +111,19 @@ export interface WishlistItem {
 	courseId: string;
 	course?: Course;
 	createdAt?: string;
+}
+
+export interface Review {
+	id: string;
+	rating: number;
+	comment: string;
+	userId: string;
+	courseId: string;
+	createdAt: string;
+	user?: {
+		id: string;
+		fullName?: string;
+		name?: string;
+		email: string;
+	};
 }

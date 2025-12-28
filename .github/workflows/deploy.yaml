@@ -75,7 +75,7 @@ jobs:
               "cd /var/www/vid-learning/vid-learning-fe && find . -mindepth 1 ! -name '.env' -exec rm -rf {} +",
 
               "# 2. Download from S3",
-              "aws s3 cp s3://${{ env.S3_BUCKET }}/builds/${{ github.sha }}.zip /tmp/deployment.zip",
+              "su - ec2-user -c \"aws s3 cp s3://${{ env.S3_BUCKET }}/builds/${{ github.sha }}.zip /tmp/deployment.zip\"",
               
               "# 3. Unzip to target location (overwriting)",
               "unzip -o /tmp/deployment.zip -d ${{ env.PROJECT_PATH }}",

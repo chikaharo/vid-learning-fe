@@ -9,7 +9,6 @@ interface CourseSummaryProps {
 }
 
 export function CourseSummary({ course }: CourseSummaryProps) {
-	console.log("Course summary render:", course);
 	const [isExpanded, setIsExpanded] = useState(false);
 	const runtimeHours = (course.durationMinutes / 60).toFixed(1);
 	const shouldTruncate = course.description.length > 500;

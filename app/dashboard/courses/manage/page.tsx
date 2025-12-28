@@ -1,13 +1,10 @@
 import { CourseManager } from "@/components/course/course-manager";
-import { getAllCourses, getInstructorCourses } from "@/lib/content-service";
 
 export const metadata = {
 	title: "Course builder",
 };
 
-export default async function CourseManagePage() {
-	const courses = await getInstructorCourses();
-
+export default function CourseManagePage() {
 	return (
 		<div className="space-y-8">
 			<header className="space-y-2">
@@ -19,7 +16,7 @@ export default async function CourseManagePage() {
 					Use the form below to publish new courses or edit existing ones.
 				</p>
 			</header>
-			<CourseManager initialCourses={courses} />
+			<CourseManager initialCourses={[]} />
 		</div>
 	);
 }

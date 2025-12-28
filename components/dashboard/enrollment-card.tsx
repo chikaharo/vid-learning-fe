@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Course, Enrollment } from "@/types/course";
 
 interface EnrollmentCardProps {
@@ -32,9 +33,12 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
           {enrollment.progressPercent}% complete
         </p>
       </div>
-      <button className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900">
+      <Link
+        href={`/courses/${enrollment.course.slug}`}
+        className="inline-block text-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
+      >
         Continue lesson
-      </button>
+      </Link>
     </div>
   );
 }

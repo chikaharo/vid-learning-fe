@@ -24,12 +24,11 @@ export default async function HomePage() {
             Built for course marketplaces
           </p>
           <h1 className="text-4xl font-semibold text-zinc-900 lg:text-5xl">
-            Launch a Udemy-quality experience with Next.js + NestJS.
+            Welcome to the Ultimate Video Learning Platform
           </h1>
           <p className="text-lg text-zinc-600 lg:w-3/4">
-            Market your catalog, enroll learners, and deliver binge-worthy video
-            lessons. This starter includes everything from discovery to
-            dashboards so you can plug into the NestJS backend immediately.
+            Discover a wide range of courses, enhance your skills, and achieve your goals. 
+            Join our community of learners and start your journey today.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link

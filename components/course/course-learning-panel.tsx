@@ -132,6 +132,24 @@ export function CourseLearningPanel({
 			}
 		});
 
+		const sortItems = (
+			a: { data: { order?: number; createdAt?: string } },
+			b: { data: { order?: number; createdAt?: string } }
+		) => {
+			const orderA = a.data.order ?? 0;
+			const orderB = b.data.order ?? 0;
+			if (orderA !== orderB) {
+				return orderA - orderB;
+			}
+			const timeA = a.data.createdAt
+				? new Date(a.data.createdAt).getTime()
+				: 0;
+			const timeB = b.data.createdAt
+				? new Date(b.data.createdAt).getTime()
+				: 0;
+			return timeA - timeB;
+		};
+
 		const mergeLessons = (lessonsToMerge: Lesson[]) => {
 			const items: Array<{
 				type: "lesson" | "quiz";
@@ -144,14 +162,12 @@ export function CourseLearningPanel({
 					related.forEach((q) => items.push({ type: "quiz", data: q }));
 				}
 			});
-			return items;
+			return items.sort(sortItems);
 		};
 
 		if (course.modules && course.modules.length > 0) {
 			const groups = course.modules.map((module) => {
 				const moduleLessons = lessons.filter((l) => l.moduleId === module.id);
-				// Sort logic if needed, assuming API order or mapped order
-				// simple merge for now
 				return {
 					id: module.id,
 					title: module.title,
@@ -166,7 +182,7 @@ export function CourseLearningPanel({
 				groups.push({
 					id: "general",
 					title: "General",
-					items,
+					items: items.sort(sortItems),
 				});
 			}
 			return groups;
@@ -178,7 +194,7 @@ export function CourseLearningPanel({
 			{
 				id: "default",
 				title: "Course outline",
-				items,
+				items: items.sort(sortItems),
 			},
 		];
 	}, [course.modules, lessons, quizzes]);
