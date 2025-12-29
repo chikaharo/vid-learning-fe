@@ -1,7 +1,7 @@
 "use client";
 
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 import {
 	DndContext,
 	closestCenter,
@@ -30,6 +30,8 @@ import {
 	updateQuiz,
 } from "@/lib/content-service";
 import { AUTH_EVENT, getStoredUser, type StoredUser } from "@/lib/session";
+
+const SortableItemContext = React.createContext<any>(null);
 
 type Status = { type: "success" | "error"; message: string } | null;
 
@@ -66,6 +68,7 @@ function SortableItem({
 		attributes,
 		listeners,
 		setNodeRef,
+		setActivatorNodeRef,
 		transform,
 		transition,
 		isDragging,
@@ -79,16 +82,44 @@ function SortableItem({
 		position: "relative" as const,
 	};
 
+	const contextValue = useMemo(
+		() => ({ attributes, listeners, ref: setActivatorNodeRef }),
+		[attributes, listeners, setActivatorNodeRef]
+	);
+
 	return (
 		<li
 			ref={setNodeRef}
 			style={style}
-			{...attributes}
-			{...listeners}
 			className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 px-4 py-3 bg-white hover:border-zinc-300 transition-colors"
 		>
-			{children}
+			<SortableItemContext.Provider value={contextValue}>
+				{children}
+			</SortableItemContext.Provider>
 		</li>
+	);
+}
+
+function DragHandle() {
+	const { attributes, listeners, ref } = React.useContext(SortableItemContext);
+	return (
+		<div
+			ref={ref}
+			{...attributes}
+			{...listeners}
+			className="flex cursor-grab items-center gap-2 p-2 touch-none text-zinc-400 hover:text-zinc-600 active:cursor-grabbing"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				fill="currentColor"
+				viewBox="0 0 256 256"
+				className="pointer-events-none"
+			>
+				<path d="M104,40V216a8,8,0,0,1-16,0V40a8,8,0,0,1,16,0Zm64,0V216a8,8,0,0,1-16,0V40a8,8,0,0,1,16,0Z"></path>
+			</svg>
+		</div>
 	);
 }
 
@@ -100,9 +131,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 	const [lessonDeletingId, setLessonDeletingId] = useState<string | null>(null);
 	const [quizDeletingId, setQuizDeletingId] = useState<string | null>(null);
 	const [status, setStatus] = useState<Status>(null);
-	const [user, setUser] = useState<StoredUser | null>(() =>
-		typeof window === "undefined" ? null : getStoredUser()
-	);
+	const [user, setUser] = useState<StoredUser | null>(null);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor),
@@ -147,6 +176,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
+		setUser(getStoredUser());
 		const syncUser = () => setUser(getStoredUser());
 		window.addEventListener("storage", syncUser);
 		window.addEventListener(AUTH_EVENT, syncUser);
@@ -356,7 +386,10 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 								New lesson
 							</Link>
 							<Link
-								href={`/dashboard/courses/${course.slug}/quizzes/new`}
+								href={{
+									pathname: `/dashboard/courses/${course.slug}/quizzes/new`,
+									query: { order: unifiedContent.length },
+								}}
 								className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
 							>
 								New quiz
@@ -390,17 +423,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 										>
 											<div className="flex-1">
 												<div className="mb-1 flex items-center gap-2">
-													<div className="flex cursor-grab items-center gap-2 text-zinc-400 hover:text-zinc-600 active:cursor-grabbing">
-														<svg
-															xmlns="http://www.w3.org/2000/svg"
-															width="16"
-															height="16"
-															fill="currentColor"
-															viewBox="0 0 256 256"
-														>
-															<path d="M104,40V216a8,8,0,0,1-16,0V40a8,8,0,0,1,16,0Zm64,0V216a8,8,0,0,1-16,0V40a8,8,0,0,1,16,0Z"></path>
-														</svg>
-													</div>
+													<DragHandle />
 													<span
 														className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
 															item.type === "lesson"
@@ -449,11 +472,16 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 												</Link>
 												<button
 													type="button"
-													onClick={() =>
+													onPointerDown={(e) => {
+														e.stopPropagation();
+														e.preventDefault();
+													}}
+													onClick={(e) => {
+														e.stopPropagation();
 														item.type === "lesson"
 															? handleLessonDelete(item.id)
-															: handleQuizDelete(item.id)
-													}
+															: handleQuizDelete(item.id);
+													}}
 													disabled={
 														disableMutations ||
 														(item.type === "lesson"

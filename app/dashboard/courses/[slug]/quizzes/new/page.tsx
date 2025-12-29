@@ -10,6 +10,7 @@ import {
 
 interface NewQuizPageProps {
 	params: Promise<{ slug: string }>;
+	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateStaticParams() {
@@ -17,8 +18,14 @@ export async function generateStaticParams() {
 	return courses.map((course) => ({ slug: course.slug }));
 }
 
-export default async function NewQuizPage({ params }: NewQuizPageProps) {
+export default async function NewQuizPage({
+	params,
+	searchParams,
+}: NewQuizPageProps) {
 	const { slug } = await params;
+	const { order } = await searchParams;
+	const initialOrder = order ? Number(order) : undefined;
+
 	const course = await getCourseBySlug(slug);
 	if (!course) {
 		notFound();
@@ -58,6 +65,7 @@ export default async function NewQuizPage({ params }: NewQuizPageProps) {
 					courseSlug={course.slug}
 					mode="create"
 					initialLessons={lessons}
+					initialOrder={initialOrder}
 				/>
 			</section>
 		</div>

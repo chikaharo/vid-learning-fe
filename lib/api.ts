@@ -164,7 +164,15 @@ export async function fetchFromApi<T>(
 
     const contentType = response.headers.get("content-type");
     if (contentType?.includes("application/json")) {
-      return (await response.json()) as T;
+      const text = await response.text();
+      try {
+        return JSON.parse(text) as T;
+      } catch (error) {
+        console.error("JSON Parse Error:", error);
+        // Only log a substring to avoid flooding logs if huge
+        console.error("Response Text Preview:", text.substring(0, 1000));
+        throw new Error("Invalid JSON response from API");
+      }
     }
 
     return (await response.text()) as T;

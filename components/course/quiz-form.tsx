@@ -28,6 +28,7 @@ interface QuizFormProps {
 	mode: "create" | "edit";
 	initialQuiz?: Quiz;
 	initialLessons?: Lesson[];
+	initialOrder?: number;
 }
 
 export function QuizForm({
@@ -36,6 +37,7 @@ export function QuizForm({
 	mode,
 	initialQuiz,
 	initialLessons = [],
+	initialOrder,
 }: QuizFormProps) {
 	const router = useRouter();
 	const [lessons, setLessons] = useState<Lesson[]>(initialLessons);
@@ -244,6 +246,7 @@ export function QuizForm({
 			isPublished: form.isPublished,
 			lessonId: form.lessonId || undefined,
 			questions: questionPayloads,
+			order: mode === "create" ? initialOrder : undefined,
 		};
 
 		setIsSubmitting(true);
