@@ -386,7 +386,10 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 								New lesson
 							</Link>
 							<Link
-								href={`/dashboard/courses/${course.slug}/quizzes/new`}
+								href={{
+									pathname: `/dashboard/courses/${course.slug}/quizzes/new`,
+									query: { order: unifiedContent.length },
+								}}
 								className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
 							>
 								New quiz
