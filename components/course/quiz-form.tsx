@@ -42,16 +42,28 @@ export function QuizForm({
 	const router = useRouter();
 	const [lessons, setLessons] = useState<Lesson[]>(initialLessons);
 	const [isLoadingLessons, setIsLoadingLessons] = useState(false);
-	const [questions, setQuestions] = useState<QuestionForm[]>([
-		{
-			prompt: "",
-			points: "1",
-			options: [
-				{ label: "", explanation: "", isCorrect: true },
-				{ label: "", explanation: "", isCorrect: false },
-			],
-		},
-	]);
+	const [questions, setQuestions] = useState<QuestionForm[]>(
+		initialQuiz?.questions?.length
+			? initialQuiz.questions.map((q) => ({
+					prompt: q.prompt,
+					points: String(q.points),
+					options: q.options.map((o) => ({
+						label: o.label,
+						explanation: o.explanation ?? "",
+						isCorrect: o.isCorrect,
+					})),
+			  }))
+			: [
+					{
+						prompt: "",
+						points: "1",
+						options: [
+							{ label: "", explanation: "", isCorrect: true },
+							{ label: "", explanation: "", isCorrect: false },
+						],
+					},
+			  ]
+	);
 	const [form, setForm] = useState({
 		title: initialQuiz?.title ?? "",
 		description: initialQuiz?.description ?? "",

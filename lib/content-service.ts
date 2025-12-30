@@ -524,7 +524,7 @@ export async function getQuiz(id: string): Promise<Quiz | null> {
 	}
 	const apiQuiz = await fetchFromApi<ApiQuiz>(
 		`/quizzes/${id}`,
-		{ cache: "force-cache" },
+		{ cache: "no-store" },
 		{ fallbackToMock: true }
 	);
 	return apiQuiz ? transformQuiz(apiQuiz) : null;
