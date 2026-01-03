@@ -602,6 +602,23 @@ export async function getCourseBySlug(
 	return null;
 }
 
+export async function getEnrollmentsForCourse(courseId: string): Promise<
+	Array<Enrollment & { user: { fullName: string; email: string; avatarUrl: string } }>
+> {
+	if (!courseId) {
+		return [];
+	}
+	const enrollments = await fetchFromApi<
+		Array<Enrollment & { user: { fullName: string; email: string; avatarUrl: string } }>
+	>(
+		`/enrollments/course/${courseId}`,
+		{ cache: "no-store" },
+		{ fallbackToMock: false, auth: true }
+	);
+	console.log("Enrollments for course:", enrollments);
+	return enrollments ?? [];
+}
+
 export async function getUserEnrollments(): Promise<
 	Array<Enrollment & { course: Course }>
 > {

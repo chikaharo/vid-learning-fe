@@ -132,6 +132,9 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 	const [quizDeletingId, setQuizDeletingId] = useState<string | null>(null);
 	const [status, setStatus] = useState<Status>(null);
 	const [user, setUser] = useState<StoredUser | null>(null);
+	const [activeTab, setActiveTab] = useState<"content" | "students">("content");
+	const [students, setStudents] = useState<Array<any>>([]);
+	const [studentsLoading, setStudentsLoading] = useState(false);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor),
@@ -173,6 +176,27 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 			ignore = true;
 		};
 	}, [course.id]);
+
+	useEffect(() => {
+		if (activeTab === "students") {
+			setStudentsLoading(true);
+			import("@/lib/content-service")
+				.then(({ getEnrollmentsForCourse }) => getEnrollmentsForCourse(course.id))
+				.then((data) => {
+					setStudents(data);
+				})
+				.catch((error) => {
+					console.error("Failed to load students", error);
+					setStatus({
+						type: "error",
+						message: "Failed to load students.",
+					});
+				})
+				.finally(() => {
+					setStudentsLoading(false);
+				});
+		}
+	}, [activeTab, course.id]);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -367,144 +391,250 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 				</div>
 			</section>
 
-			<section className="rounded-3xl border border-zinc-200 bg-white p-6">
-				<div className="flex flex-wrap items-center justify-between gap-4">
-					<div>
-						<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-							Content
-						</p>
-						<h3 className="text-xl font-semibold text-zinc-900">
-							Course content
-						</h3>
-					</div>
-					{user && (
-						<div className="flex gap-2">
-							<Link
-								href={`/dashboard/courses/${course.slug}/lessons/new`}
-								className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
-							>
-								New lesson
-							</Link>
-							<Link
-								href={{
-									pathname: `/dashboard/courses/${course.slug}/quizzes/new`,
-									query: { order: unifiedContent.length },
-								}}
-								className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
-							>
-								New quiz
-							</Link>
+			<div className="flex gap-4 border-b border-zinc-200">
+				<button
+					onClick={() => setActiveTab("content")}
+					className={`pb-3 text-sm font-medium transition ${
+						activeTab === "content"
+							? "border-b-2 border-zinc-900 text-zinc-900"
+							: "text-zinc-500 hover:text-zinc-900"
+					}`}
+				>
+					Course Content
+				</button>
+				<button
+					onClick={() => setActiveTab("students")}
+					className={`pb-3 text-sm font-medium transition ${
+						activeTab === "students"
+							? "border-b-2 border-zinc-900 text-zinc-900"
+							: "text-zinc-500 hover:text-zinc-900"
+					}`}
+				>
+					Students
+				</button>
+			</div>
+
+			{activeTab === "content" ? (
+				<section className="rounded-3xl border border-zinc-200 bg-white p-6">
+					<div className="flex flex-wrap items-center justify-between gap-4">
+						<div>
+							<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+								Content
+							</p>
+							<h3 className="text-xl font-semibold text-zinc-900">
+								Course content
+							</h3>
 						</div>
-					)}
-				</div>
-				<div className="mt-4 space-y-3">
-					{isLoading ? (
-						<p className="text-sm text-zinc-500">Loading content…</p>
-					) : unifiedContent.length === 0 ? (
-						<p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-sm text-zinc-500">
-							No content yet. Create lessons or quizzes to build your
-							curriculum.
-						</p>
-					) : (
-						<DndContext
-							sensors={sensors}
-							collisionDetection={closestCenter}
-							onDragEnd={handleDragEnd}
-						>
-							<SortableContext
-								items={unifiedContent.map((item) => `${item.type}-${item.id}`)}
-								strategy={verticalListSortingStrategy}
+						{user && (
+							<div className="flex gap-2">
+								<Link
+									href={`/dashboard/courses/${course.slug}/lessons/new`}
+									className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
+								>
+									New lesson
+								</Link>
+								<Link
+									href={{
+										pathname: `/dashboard/courses/${course.slug}/quizzes/new`,
+										query: { order: unifiedContent.length },
+									}}
+									className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
+								>
+									New quiz
+								</Link>
+							</div>
+						)}
+					</div>
+					<div className="mt-4 space-y-3">
+						{isLoading ? (
+							<p className="text-sm text-zinc-500">Loading content…</p>
+						) : unifiedContent.length === 0 ? (
+							<p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-sm text-zinc-500">
+								No content yet. Create lessons or quizzes to build your
+								curriculum.
+							</p>
+						) : (
+							<DndContext
+								sensors={sensors}
+								collisionDetection={closestCenter}
+								onDragEnd={handleDragEnd}
 							>
-								<ul className="space-y-3">
-									{unifiedContent.map((item) => (
-										<SortableItem
-											key={`${item.type}-${item.id}`}
-											id={`${item.type}-${item.id}`}
-										>
-											<div className="flex-1">
-												<div className="mb-1 flex items-center gap-2">
-													<DragHandle />
-													<span
-														className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-															item.type === "lesson"
-																? "bg-violet-100 text-violet-700"
-																: "bg-emerald-100 text-emerald-700"
-														}`}
-													>
-														{item.type === "lesson" ? "Lesson" : "Quiz"}
-													</span>
-													<p className="text-sm font-semibold text-zinc-900">
-														{item.title}
+								<SortableContext
+									items={unifiedContent.map((item) => `${item.type}-${item.id}`)}
+									strategy={verticalListSortingStrategy}
+								>
+									<ul className="space-y-3">
+										{unifiedContent.map((item) => (
+											<SortableItem
+												key={`${item.type}-${item.id}`}
+												id={`${item.type}-${item.id}`}
+											>
+												<div className="flex-1">
+													<div className="mb-1 flex items-center gap-2">
+														<DragHandle />
+														<span
+															className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+																item.type === "lesson"
+																	? "bg-violet-100 text-violet-700"
+																	: "bg-emerald-100 text-emerald-700"
+															}`}
+														>
+															{item.type === "lesson" ? "Lesson" : "Quiz"}
+														</span>
+														<p className="text-sm font-semibold text-zinc-900">
+															{item.title}
+														</p>
+													</div>
+													<p className="pl-6 text-xs uppercase tracking-wide text-zinc-500">
+														{item.type === "lesson" ? (
+															<>
+																{item.durationMinutes ?? 0} min ·{" "}
+																{item.isPreview ? "Preview" : "Locked"}
+																{item.videoUrl ? " · Video ready" : ""}
+																{item.content ? " · Notes" : ""}
+															</>
+														) : (
+															<>
+																{item.isPublished ? "Published" : "Draft"} ·{" "}
+																{item.lessonId
+																	? "Linked to lesson"
+																	: "Course-wide"}{" "}
+																·{" "}
+																{item.timeLimitSeconds
+																	? `${Math.round(
+																			item.timeLimitSeconds / 60
+																	  )} min limit`
+																	: "No timer"}
+															</>
+														)}
 													</p>
 												</div>
-												<p className="pl-6 text-xs uppercase tracking-wide text-zinc-500">
-													{item.type === "lesson" ? (
-														<>
-															{item.durationMinutes ?? 0} min ·{" "}
-															{item.isPreview ? "Preview" : "Locked"}
-															{item.videoUrl ? " · Video ready" : ""}
-															{item.content ? " · Notes" : ""}
-														</>
-													) : (
-														<>
-															{item.isPublished ? "Published" : "Draft"} ·{" "}
-															{item.lessonId
-																? "Linked to lesson"
-																: "Course-wide"}{" "}
-															·{" "}
-															{item.timeLimitSeconds
-																? `${Math.round(
-																		item.timeLimitSeconds / 60
-																  )} min limit`
-																: "No timer"}
-														</>
-													)}
-												</p>
-											</div>
-											<div className="flex items-center gap-2">
-												<Link
-													href={`/dashboard/courses/${course.slug}/${
-														item.type === "lesson" ? "lessons" : "quizzes"
-													}/${item.id}/edit`}
-													className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-900 transition hover:border-zinc-900"
-												>
-													Edit
-												</Link>
-												<button
-													type="button"
-													onPointerDown={(e) => {
-														e.stopPropagation();
-														e.preventDefault();
-													}}
-													onClick={(e) => {
-														e.stopPropagation();
-														item.type === "lesson"
-															? handleLessonDelete(item.id)
-															: handleQuizDelete(item.id);
-													}}
-													disabled={
-														disableMutations ||
-														(item.type === "lesson"
-															? lessonDeletingId === item.id
-															: quizDeletingId === item.id)
-													}
-													className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
-												>
-													{(item.type === "lesson"
-														? lessonDeletingId
-														: quizDeletingId) === item.id
-														? "Deleting…"
-														: "Delete"}
-												</button>
-											</div>
-										</SortableItem>
-									))}
-								</ul>
-							</SortableContext>
-						</DndContext>
-					)}
-				</div>
-			</section>
+												<div className="flex items-center gap-2">
+													<Link
+														href={`/dashboard/courses/${course.slug}/${
+															item.type === "lesson" ? "lessons" : "quizzes"
+														}/${item.id}/edit`}
+														className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-900 transition hover:border-zinc-900"
+													>
+														Edit
+													</Link>
+													<button
+														type="button"
+														onPointerDown={(e) => {
+															e.stopPropagation();
+															e.preventDefault();
+														}}
+														onClick={(e) => {
+															e.stopPropagation();
+															item.type === "lesson"
+																? handleLessonDelete(item.id)
+																: handleQuizDelete(item.id);
+														}}
+														disabled={
+															disableMutations ||
+															(item.type === "lesson"
+																? lessonDeletingId === item.id
+																: quizDeletingId === item.id)
+														}
+														className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+													>
+														{(item.type === "lesson"
+															? lessonDeletingId
+															: quizDeletingId) === item.id
+															? "Deleting…"
+															: "Delete"}
+													</button>
+												</div>
+											</SortableItem>
+										))}
+									</ul>
+								</SortableContext>
+							</DndContext>
+						)}
+					</div>
+				</section>
+			) : (
+				<section className="rounded-3xl border border-zinc-200 bg-white p-6">
+					<div>
+						<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+							Community
+						</p>
+						<h3 className="text-xl font-semibold text-zinc-900">
+							Enrolled Students
+						</h3>
+					</div>
+					<div className="mt-6">
+						{studentsLoading ? (
+							<p className="text-sm text-zinc-500">Loading students…</p>
+						) : students.length === 0 ? (
+							<p className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-sm text-zinc-500">
+								No students enrolled yet.
+							</p>
+						) : (
+							<div className="overflow-hidden rounded-2xl border border-zinc-200">
+								<table className="w-full text-left text-sm text-zinc-600">
+									<thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
+										<tr>
+											<th className="px-6 py-3 font-semibold">Student</th>
+											<th className="px-6 py-3 font-semibold">Progress</th>
+											<th className="px-6 py-3 font-semibold">Enrolled</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-zinc-200 bg-white">
+										{students.map((enrollment) => (
+											<tr key={enrollment.id}>
+												<td className="px-6 py-4">
+													<div className="flex items-center gap-3">
+														<div className="h-8 w-8 overflow-hidden rounded-full bg-zinc-100">
+															{enrollment.user?.avatarUrl ? (
+																<img
+																	src={enrollment.user.avatarUrl}
+																	alt=""
+																	className="h-full w-full object-cover"
+																/>
+															) : (
+																<div className="flex h-full w-full items-center justify-center bg-violet-100 text-violet-700 font-bold">
+																	{(enrollment.user?.fullName?.[0] || "U").toUpperCase()}
+																</div>
+															)}
+														</div>
+														<div>
+															<p className="font-medium text-zinc-900">
+																{enrollment.user?.fullName || "Unknown User"}
+															</p>
+															<p className="text-xs text-zinc-500">
+																{enrollment.user?.email}
+															</p>
+														</div>
+													</div>
+												</td>
+												<td className="px-6 py-4">
+													<div className="flex items-center gap-2">
+														<div className="h-2 w-24 overflow-hidden rounded-full bg-zinc-100">
+															<div
+																className="h-full bg-emerald-500"
+																style={{
+																	width: `${enrollment.progressPercent}%`,
+																}}
+															/>
+														</div>
+														<span className="text-xs font-medium text-zinc-700">
+															{enrollment.progressPercent}%
+														</span>
+													</div>
+												</td>
+												<td className="px-6 py-4">
+													{new Date(enrollment.createdAt).toLocaleDateString()}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						)}
+					</div>
+				</section>
+			)}
 		</div>
 	);
 }
