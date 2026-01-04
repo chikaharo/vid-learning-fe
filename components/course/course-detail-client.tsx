@@ -19,6 +19,11 @@ import {
 	useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import dynamic from 'next/dynamic';
+
+
+// Removed PaymentModal dynamic import
+
 
 import type { Course, Lesson, Quiz } from "@/types/course";
 import {
@@ -143,72 +148,18 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 		})
 	);
 
-	useEffect(() => {
-		let ignore = false;
-		setLessonsLoading(true);
-		setQuizzesLoading(true);
-		Promise.all([
-			getLessonsForCourse(course.id),
-			getQuizzesForCourse(course.id),
-		])
-			.then(([lessonData, quizData]) => {
-				if (ignore) return;
-				setLessons(lessonData);
-				setQuizzes(quizData);
-			})
-			.catch((error) => {
-				if (ignore) return;
-				setStatus({
-					type: "error",
-					message:
-						error instanceof Error
-							? error.message
-							: "Unable to load course content.",
-				});
-			})
-			.finally(() => {
-				if (ignore) return;
-				setLessonsLoading(false);
-				setQuizzesLoading(false);
-			});
+	// Removed enrollment check
 
-		return () => {
-			ignore = true;
-		};
-	}, [course.id]);
 
-	useEffect(() => {
-		if (activeTab === "students") {
-			setStudentsLoading(true);
-			import("@/lib/content-service")
-				.then(({ getEnrollmentsForCourse }) => getEnrollmentsForCourse(course.id))
-				.then((data) => {
-					setStudents(data);
-				})
-				.catch((error) => {
-					console.error("Failed to load students", error);
-					setStatus({
-						type: "error",
-						message: "Failed to load students.",
-					});
-				})
-				.finally(() => {
-					setStudentsLoading(false);
-				});
-		}
-	}, [activeTab, course.id]);
+	// Removed handleBuy and onPaymentSuccess
 
-	useEffect(() => {
-		if (typeof window === "undefined") return;
-		setUser(getStoredUser());
-		const syncUser = () => setUser(getStoredUser());
-		window.addEventListener("storage", syncUser);
-		window.addEventListener(AUTH_EVENT, syncUser);
-		return () => {
-			window.removeEventListener("storage", syncUser);
-			window.removeEventListener(AUTH_EVENT, syncUser);
-		};
-	}, []);
+
+
+
+// Helper for dynamic import to avoid SSR issues with Stripe potentially
+
+
+
 
 	const disableMutations = !user;
 
@@ -331,6 +282,9 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 
 	const isLoading = lessonsLoading || quizzesLoading;
 
+
+
+
 	return (
 		<div className="space-y-6">
 			{status && (
@@ -355,6 +309,9 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 							{course.title}
 						</h2>
 						<p className="mt-2 text-sm text-zinc-600">{course.description}</p>
+						
+						{/* Removed Enrolled/Purchased badges */}
+
 					</div>
 					<dl className="grid w-full shrink-0 gap-x-8 gap-y-4 text-sm text-zinc-600 md:w-auto md:grid-cols-2">
 						<div>
@@ -391,6 +348,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 				</div>
 			</section>
 
+			{/* Tabs */}
 			<div className="flex gap-4 border-b border-zinc-200">
 				<button
 					onClick={() => setActiveTab("content")}
@@ -414,6 +372,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 				</button>
 			</div>
 
+            {/* Content Tab with Check */}
 			{activeTab === "content" ? (
 				<section className="rounded-3xl border border-zinc-200 bg-white p-6">
 					<div className="flex flex-wrap items-center justify-between gap-4">
@@ -500,11 +459,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 																	? "Linked to lesson"
 																	: "Course-wide"}{" "}
 																·{" "}
-																{item.timeLimitSeconds
-																	? `${Math.round(
-																			item.timeLimitSeconds / 60
-																	  )} min limit`
-																	: "No timer"}
+																{[' ', Math.round(item.timeLimitSeconds! / 60), ' min limit']}
 															</>
 														)}
 													</p>
@@ -553,7 +508,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 						)}
 					</div>
 				</section>
-			) : (
+            ) : (
 				<section className="rounded-3xl border border-zinc-200 bg-white p-6">
 					<div>
 						<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
@@ -634,7 +589,12 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 						)}
 					</div>
 				</section>
-			)}
+            )}
+
+			{/* Removed Payment Integration */}
 		</div>
 	);
 }
+
+
+

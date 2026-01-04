@@ -14,6 +14,7 @@ interface CourseFormState {
 	isPublished: boolean;
 	tags: string;
 	thumbnailUrl: string;
+	price: string;
 }
 
 const emptyForm: CourseFormState = {
@@ -25,6 +26,7 @@ const emptyForm: CourseFormState = {
 	isPublished: false,
 	tags: "",
 	thumbnailUrl: "",
+	price: "0",
 };
 
 type Status = { type: "success" | "error"; message: string } | null;
@@ -90,6 +92,7 @@ export default function CreateCoursePage() {
 				tags,
 				thumbnailUrl: form.thumbnailUrl.trim() || undefined,
 				instructorId: user.id,
+				price: Number(form.price) || 0,
 			};
 
 			const created = await createCourse(payload);
@@ -202,6 +205,19 @@ export default function CreateCoursePage() {
 								min={0}
 								value={form.durationMinutes}
 								onChange={updateField("durationMinutes")}
+								className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+							/>
+						</label>
+						<label className="block">
+							<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+								Price ($)
+							</span>
+							<input
+								type="number"
+								min={0}
+								step="0.01"
+								value={form.price}
+								onChange={updateField("price")}
 								className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
 							/>
 						</label>

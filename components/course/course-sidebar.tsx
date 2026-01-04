@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -19,6 +20,11 @@ import type { Course } from "@/types/course";
 import { CourseEnrollModal } from "./course-enroll-modal";
 import Image from "next/image";
 
+const PaymentModal = dynamic(
+	() => import("@/components/payment/payment-modal").then((mod) => mod.PaymentModal),
+	{ ssr: false }
+);
+
 interface CourseSidebarProps {
 	course: Course;
 }
@@ -35,6 +41,9 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 	const [isEnrolled, setIsEnrolled] = useState(false);
 	const [isWishlisted, setIsWishlisted] = useState(false);
 	const [hydrated, setHydrated] = useState(false);
+
+	const [showPaymentModal, setShowPaymentModal] = useState(false);
+	const [clientSecret, setClientSecret] = useState<string | null>(null);
 
 	useEffect(() => {
 		setHydrated(true);
@@ -113,6 +122,57 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 			setIsBusy(false);
 		}
 	}
+
+	async function handleEnrollClick() {
+		if (!user) {
+			// Logic handled by button disabled state or render, but nice to be safe
+			return;
+		}
+
+		if ((course.price ?? 0) > 0) {
+			// Paid course -> Payment Flow
+			setStatus(null);
+			setIsBusy(true);
+			try {
+				const { createPaymentIntent } = await import("@/lib/content-service");
+				const { clientSecret } = await createPaymentIntent(course.id);
+				setClientSecret(clientSecret);
+				setShowPaymentModal(true);
+			} catch (error) {
+				console.error("Payment init error", error);
+				setStatus({
+					type: "error",
+					message: "Unable to initialize payment. Please try again.",
+				});
+				if (error instanceof Error && error.message.includes("User already enrolled")) {
+					setIsEnrolled(true);
+					setStatus({
+						type: "success",
+						message: "You are already enrolled! Refreshing...",
+					});
+					setTimeout(() => {
+						window.location.reload();
+					}, 1500);
+				}
+				
+			} finally {
+				setIsBusy(false);
+			}
+		} else {
+			// Free course -> Confirmation Modal
+			setIsModalOpen(true);
+		}
+	}
+
+	const onPaymentSuccess = () => {
+		setShowPaymentModal(false);
+		setIsEnrolled(true);
+		window.dispatchEvent(new Event(ENROLLMENT_EVENT));
+		setStatus({
+			type: "success",
+			message: "Purchase successful! You can now access the content.",
+		});
+	};
 
 	async function handleWishlist() {
 		if (!user) {
@@ -195,8 +255,8 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 					)}
 					<button
 						className="w-full rounded-full bg-zinc-900 px-4 py-3 font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-						onClick={() => setIsModalOpen(true)}
-						disabled={enrollDisabled}
+						onClick={handleEnrollClick}
+						disabled={enrollDisabled || isBusy}
 					>
 						{enrollLabel}
 					</button>
@@ -228,6 +288,14 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 				course={course}
 				isBusy={isBusy}
 			/>
+			{showPaymentModal && clientSecret && (
+				<PaymentModal
+					clientSecret={clientSecret}
+					price={course.price ?? 0}
+					onSuccess={onPaymentSuccess}
+					onCancel={() => setShowPaymentModal(false)}
+				/>
+			)}
 		</>
 	);
 }

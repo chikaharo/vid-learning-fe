@@ -44,6 +44,7 @@ function getServerSnapshot(): string | null {
 const navigation = [
   { href: "/courses", label: "Courses" },
   { href: "/dashboard", label: "My learning" },
+  { href: "/profile/payments", label: "Billing" },
 ];
 
 export function SiteHeader() {

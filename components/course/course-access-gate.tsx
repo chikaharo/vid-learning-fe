@@ -58,8 +58,10 @@ export function CourseAccessGate({
 				user.id,
 				course.id
 			);
+			console.log("[CourseAccessGate] Fetched enrollment:", enrollmentRecord);
 			if (!ignore) {
 				const enrolled = Boolean(enrollmentRecord);
+				console.log("[CourseAccessGate] Is Enrolled?", enrolled);
 				setIsEnrolled(enrolled);
 				setEnrollment(enrollmentRecord);
 				setIsCheckingEnrollment(false);

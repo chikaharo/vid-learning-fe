@@ -43,6 +43,7 @@ export interface ApiCourse {
 		avatarUrl?: string;
 		bio?: string;
 	};
+	price?: number;
 	metadata?: Record<string, unknown>;
 }
 
@@ -134,7 +135,7 @@ export function transformCourse(apiCourse: ApiCourse): Course {
 		rating: Number(metadata.rating) || MOCK_METRICS.rating,
 		ratingCount: Number(metadata.ratingCount) || MOCK_METRICS.ratingCount,
 		students: Number(metadata.students) || MOCK_METRICS.students,
-		price: Number(metadata.price) || 19.99,
+		price: apiCourse.price !== undefined ? Number(apiCourse.price) : 0,
 		currency,
 		language: (metadata.language as string) ?? "English",
 		thumbnailUrl: apiCourse.thumbnailUrl ?? null,
@@ -247,6 +248,7 @@ export interface CoursePayload {
 	tags?: string[];
 	thumbnailUrl?: string;
 	instructorId: string;
+	price?: number;
 }
 
 export type CourseUpdatePayload = Partial<
@@ -702,7 +704,7 @@ export async function fetchEnrollmentForCourse(
 	courseId: string
 ): Promise<Enrollment | null> {
 	const enrollmentsForUser = await fetchFromApi<Enrollment[]>(
-		`/enrollments/user/${userId}`,
+		`/enrollments/user/me`,
 		{ cache: "no-store" },
 		{ fallbackToMock: false, auth: true }
 	);
@@ -787,4 +789,20 @@ export async function checkUserReview(
 		{ cache: "no-store" },
 		{ fallbackToMock: false, auth: true }
 	);
+}
+
+export async function createPaymentIntent(courseId: string): Promise<{ clientSecret: string }> {
+	const res = await fetchFromApi<{ clientSecret: string }>(
+		"/payments/create-intent",
+		{
+			method: "POST",
+			body: JSON.stringify({ courseId }),
+			cache: "no-store",
+		},
+		{ fallbackToMock: false, auth: true }
+	);
+	if (!res?.clientSecret) {
+		throw new Error("Failed to create payment intent");
+	}
+	return res;
 }
