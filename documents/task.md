@@ -1,0 +1,23 @@
+# Tasks
+
+- [x] Scan codebase structure <!-- id: 0 -->
+    - [x] Explore frontend directory <!-- id: 1 -->
+    - [x] Explore backend directory <!-- id: 2 -->
+    - [x] Verify key configuration files <!-- id: 3 -->
+- [x] Analyze existing course management implementation <!-- id: 0 -->
+    - [x] Explore frontend `dashboard/courses/[slug]` <!-- id: 1 -->
+    - [x] Explore backend course enrollment endpoints <!-- id: 2 -->
+- [x] Design Student Management UI <!-- id: 3 -->
+    - [x] Create implementation plan <!-- id: 4 -->
+- [x] Implement Backend Changes <!-- id: 5 -->
+    - [x] Add/Verify endpoint to fetch course enrollments <!-- id: 6 -->
+- [x] Implement Frontend Changes <!-- id: 7 -->
+    - [x] Add Student Management Tab/Section <!-- id: 8 -->
+    - [x] Display list of enrolled students <!-- id: 9 -->
+    - [x] Add management actions (if any specific ones are identified, e.g., remove student) <!-- id: 10 -->
+- [x] Verification <!-- id: 11 -->
+    - [x] Verify UI works with mock/real data <!-- id: 12 -->
+- [x] Debug Student Name Issue <!-- id: 13 -->
+    - [x] Check Enrollment entity relations <!-- id: 14 -->
+    - [x] Check User entity definition <!-- id: 15 -->
+    - [x] Fix backend query/relation mapping <!-- id: 16 -->
