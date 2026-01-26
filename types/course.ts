@@ -60,6 +60,8 @@ export interface Quiz {
 	questions?: QuizQuestion[];
 	createdAt?: string;
 	updatedAt?: string;
+	type?: "PRACTICE" | "TEST";
+	maxRetries?: number;
 }
 
 export interface Course {

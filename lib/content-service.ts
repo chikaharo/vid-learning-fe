@@ -87,6 +87,8 @@ interface ApiQuiz {
 	questions?: ApiQuizQuestion[];
 	createdAt?: string;
 	updatedAt?: string;
+	type?: "PRACTICE" | "TEST";
+	maxRetries?: number;
 }
 
 export interface QuizQuestionPayload {
@@ -234,6 +236,8 @@ function transformQuiz(apiQuiz: ApiQuiz): Quiz {
 		createdAt: apiQuiz.createdAt ?? new Date().toISOString(),
 		updatedAt:
 			apiQuiz.updatedAt ?? apiQuiz.createdAt ?? new Date().toISOString(),
+		type: apiQuiz.type,
+		maxRetries: apiQuiz.maxRetries,
 	};
 }
 
@@ -275,6 +279,8 @@ export interface QuizPayload {
 	timeLimitSeconds?: number;
 	isPublished?: boolean;
 	questions?: QuizQuestionPayload[];
+	type?: "PRACTICE" | "TEST";
+	maxRetries?: number;
 }
 
 export type LessonUpdatePayload = Partial<LessonPayload>;
@@ -528,6 +534,21 @@ export async function getQuiz(id: string): Promise<Quiz | null> {
 		{ fallbackToMock: true }
 	);
 	return apiQuiz ? transformQuiz(apiQuiz) : null;
+}
+
+export async function startQuizAttempt(payload: {
+	quizId: string;
+	userId: string;
+}): Promise<{ id: string } | null> {
+	return fetchFromApi<{ id: string }>(
+		"/quiz-attempts",
+		{
+			method: "POST",
+			body: JSON.stringify(payload),
+			cache: "no-store",
+		},
+		{ fallbackToMock: false, auth: true }
+	);
 }
 
 export async function fetchLiveCourses(): Promise<Course[]> {
