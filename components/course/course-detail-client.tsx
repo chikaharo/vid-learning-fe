@@ -39,18 +39,11 @@ interface CourseDetailClientProps {
 	course: Course;
 }
 
-type ContentItem = (Lesson & { type: "lesson" }) | (Quiz & { type: "quiz" });
+type ContentItem = (Lesson & { kind: "lesson" }) | (Quiz & { kind: "quiz" });
 
 function sortContent(list: ContentItem[]) {
 	console.log("Before Sorting content", list);
 	const afterSorted = [...list].sort((a, b) => {
-		// const orderDiff = (a.order ?? 0) - (b.order ?? 0);
-		// if (orderDiff !== 0) {
-		// 	return orderDiff;
-		// }
-		// const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-		// const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-		// return aTime - bTime;
 		return (a.order ?? 0) - (b.order ?? 0);
 	});
 	console.log("After Sorting content", afterSorted);
@@ -231,8 +224,8 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 	}
 
 	const unifiedContent: ContentItem[] = useMemo(() => {
-		const l = lessons.map((x) => ({ ...x, type: "lesson" as const }));
-		const q = quizzes.map((x) => ({ ...x, type: "quiz" as const }));
+		const l = lessons.map((x) => ({ ...x, kind: "lesson" as const }));
+		const q = quizzes.map((x) => ({ ...x, kind: "quiz" as const }));
 		return sortContent([...l, ...q]);
 	}, [lessons, quizzes]);
 
@@ -244,10 +237,10 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 		}
 
 		const oldIndex = unifiedContent.findIndex(
-			(item) => `${item.type}-${item.id}` === active.id
+			(item) => `${item.kind}-${item.id}` === active.id
 		);
 		const newIndex = unifiedContent.findIndex(
-			(item) => `${item.type}-${item.id}` === over.id
+			(item) => `${item.kind}-${item.id}` === over.id
 		);
 
 		const newOrder = arrayMove(unifiedContent, oldIndex, newIndex);
@@ -258,7 +251,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 		const updates: Promise<any>[] = [];
 
 		newOrder.forEach((item, index) => {
-			if (item.type === "lesson") {
+			if (item.kind === "lesson") {
 				const lesson = nextLessons.find((l) => l.id === item.id);
 				if (lesson && lesson.order !== index) {
 					lesson.order = index;
@@ -412,33 +405,33 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 							onDragEnd={handleDragEnd}
 						>
 							<SortableContext
-								items={unifiedContent.map((item) => `${item.type}-${item.id}`)}
+								items={unifiedContent.map((item) => `${item.kind}-${item.id}`)}
 								strategy={verticalListSortingStrategy}
 							>
 								<ul className="space-y-3">
 									{unifiedContent.map((item) => (
 										<SortableItem
-											key={`${item.type}-${item.id}`}
-											id={`${item.type}-${item.id}`}
+											key={`${item.kind}-${item.id}`}
+											id={`${item.kind}-${item.id}`}
 										>
 											<div className="flex-1">
 												<div className="mb-1 flex items-center gap-2">
 													<DragHandle />
 													<span
 														className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-															item.type === "lesson"
+															item.kind === "lesson"
 																? "bg-violet-100 text-violet-700"
 																: "bg-emerald-100 text-emerald-700"
 														}`}
 													>
-														{item.type === "lesson" ? "Lesson" : "Quiz"}
+														{item.kind === "lesson" ? "Lesson" : "Quiz"}
 													</span>
 													<p className="text-sm font-semibold text-zinc-900">
 														{item.title}
 													</p>
 												</div>
 												<p className="pl-6 text-xs uppercase tracking-wide text-zinc-500">
-													{item.type === "lesson" ? (
+													{item.kind === "lesson" ? (
 														<>
 															{item.durationMinutes ?? 0} min ·{" "}
 															{item.isPreview ? "Preview" : "Locked"}
@@ -464,7 +457,7 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 											<div className="flex items-center gap-2">
 												<Link
 													href={`/dashboard/courses/${course.slug}/${
-														item.type === "lesson" ? "lessons" : "quizzes"
+														item.kind === "lesson" ? "lessons" : "quizzes"
 													}/${item.id}/edit`}
 													className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-900 transition hover:border-zinc-900"
 												>
@@ -478,19 +471,19 @@ export function CourseDetailClient({ course }: CourseDetailClientProps) {
 													}}
 													onClick={(e) => {
 														e.stopPropagation();
-														item.type === "lesson"
+														item.kind === "lesson"
 															? handleLessonDelete(item.id)
 															: handleQuizDelete(item.id);
 													}}
 													disabled={
 														disableMutations ||
-														(item.type === "lesson"
+														(item.kind === "lesson"
 															? lessonDeletingId === item.id
 															: quizDeletingId === item.id)
 													}
 													className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
 												>
-													{(item.type === "lesson"
+													{(item.kind === "lesson"
 														? lessonDeletingId
 														: quizDeletingId) === item.id
 														? "Deleting…"
