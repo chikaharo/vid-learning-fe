@@ -72,6 +72,8 @@ export function QuizForm({
 			: "",
 		isPublished: Boolean(initialQuiz?.isPublished),
 		lessonId: initialQuiz?.lessonId ?? "",
+		type: initialQuiz?.type ?? "PRACTICE",
+		maxRetries: initialQuiz?.maxRetries ? String(initialQuiz.maxRetries) : "",
 	});
 	const [status, setStatus] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -259,6 +261,11 @@ export function QuizForm({
 			lessonId: form.lessonId || undefined,
 			questions: questionPayloads,
 			order: mode === "create" ? initialOrder : undefined,
+			type: form.type as "PRACTICE" | "TEST",
+			maxRetries:
+				form.type === "TEST" && form.maxRetries
+					? Number(form.maxRetries)
+					: undefined,
 		};
 
 		setIsSubmitting(true);
@@ -349,6 +356,36 @@ export function QuizForm({
 						))}
 					</select>
 				</label>
+			</div>
+			<div className="grid gap-4 md:grid-cols-2">
+				<label className="block">
+					<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+						Quiz Mode
+					</span>
+					<select
+						value={form.type}
+						onChange={updateField("type" as any)}
+						className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+					>
+						<option value="PRACTICE">Practice (Unlimited)</option>
+						<option value="TEST">Test (Assessment)</option>
+					</select>
+				</label>
+				{form.type === "TEST" && (
+					<label className="block animate-in fade-in zoom-in-95 duration-200">
+						<span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+							Max Retries
+						</span>
+						<input
+							type="number"
+							min={1}
+							placeholder="e.g. 3"
+							value={form.maxRetries}
+							onChange={updateField("maxRetries" as any)}
+							className="mt-1 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-zinc-900"
+						/>
+					</label>
+				)}
 			</div>
 			<label className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700">
 				<input

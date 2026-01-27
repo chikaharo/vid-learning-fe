@@ -8,7 +8,9 @@ import {
 	getQuizzesForCourse,
 	getQuiz,
 	updateEnrollment,
+	startQuizAttempt,
 } from "@/lib/content-service";
+import { getStoredUser } from "@/lib/session";
 import type { Course, Enrollment, Lesson, Quiz } from "@/types/course";
 
 interface CourseLearningPanelProps {
@@ -341,7 +343,7 @@ export function CourseLearningPanel({
 	const handleRetryQuiz = () => {
 		setQuizSubmitted(false);
 		setAnswers({});
-		if (activeQuizDetails?.timeLimitSeconds) {
+		if (activeQuizDetails?.type === 'TEST' && activeQuizDetails?.timeLimitSeconds) {
 			setTimeLeft(activeQuizDetails.timeLimitSeconds);
 		} else {
 			setTimeLeft(null);
@@ -356,11 +358,18 @@ export function CourseLearningPanel({
 		try {
 			const fullQuiz = await getQuiz(currentQuiz.id);
 			if (fullQuiz) {
+				if (fullQuiz.type === 'TEST') {
+					const user = getStoredUser();
+					if (user) {
+						await startQuizAttempt({ quizId: fullQuiz.id, userId: user.id });
+					}
+				}
+
 				setActiveQuizDetails(fullQuiz);
 				if (completedLessonSet.has(currentQuiz.id)) {
 					setQuizSubmitted(true);
 					setTimeLeft(null);
-				} else if (fullQuiz.timeLimitSeconds) {
+				} else if (fullQuiz.type === 'TEST' && fullQuiz.timeLimitSeconds) {
 					setTimeLeft(fullQuiz.timeLimitSeconds);
 				} else {
 					setTimeLeft(null);
@@ -368,9 +377,10 @@ export function CourseLearningPanel({
 			}
 		} catch (error) {
 			console.error("Failed to start quiz:", error);
+			const msg = error instanceof Error ? error.message : "Unable to load quiz.";
 			setProgressMessage({
 				type: "error",
-				text: "Unable to load quiz questions.",
+				text: msg,
 			});
 		} finally {
 			setIsStartingQuiz(false);
@@ -652,14 +662,23 @@ export function CourseLearningPanel({
 							<div className="h-full space-y-6 bg-white p-4">
 								<div className="flex items-center justify-between border-b border-zinc-100 pb-4">
 									<div>
-										<h2 className="text-2xl font-bold text-zinc-900">
-											{activeQuizDetails?.title}
-										</h2>
+										<div className="flex items-center gap-3">
+											<h2 className="text-2xl font-bold text-zinc-900">
+												{activeQuizDetails?.title}
+											</h2>
+											<span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${
+												activeQuizDetails?.type === 'TEST' 
+													? 'bg-rose-100 text-rose-700' 
+													: 'bg-emerald-100 text-emerald-700'
+											}`}>
+												{activeQuizDetails?.type === 'TEST' ? 'Exam Mode' : 'Practice Mode'}
+											</span>
+										</div>
 										<p className="text-sm text-zinc-600">
 											{activeQuizDetails?.description}
 										</p>
 									</div>
-									{timeLeft !== null && (
+									{timeLeft !== null && activeQuizDetails?.type === 'TEST' && (
 										<div
 											className={`flex items-center gap-1 rounded-full px-3 py-1 font-mono text-sm font-semibold ${
 												timeLeft < 60

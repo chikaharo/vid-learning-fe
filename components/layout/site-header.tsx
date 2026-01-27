@@ -117,6 +117,14 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+          {user && user.role === 'ADMIN' && (
+            <Link
+              href="/admin/dashboard"
+              className="transition hover:text-zinc-900"
+            >
+              Admin Portal
+            </Link>
+          )}
           {user ? (
             <div className="flex items-center gap-4">
               <div className="text-right">
