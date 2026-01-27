@@ -15,6 +15,7 @@ export interface Lesson {
 	title: string;
 	durationMinutes: number;
 	isPreview?: boolean;
+	isPublished?: boolean;
 	videoStatus?: "PENDING" | "PROCESSING" | "READY" | "FAILED";
 	order?: number;
 	courseId?: string;
