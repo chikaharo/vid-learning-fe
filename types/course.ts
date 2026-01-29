@@ -84,6 +84,7 @@ export interface Course {
 	thumbnailUrl?: string | null;
 	thumbnailColor: string;
 	updatedAt: string;
+	instructorId: string;
 	instructor: Instructor;
 	modules: CourseModule[];
 	lessons: Lesson[];

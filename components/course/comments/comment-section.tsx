@@ -16,9 +16,10 @@ import { CommentList } from "./comment-list";
 interface CommentSectionProps {
     lessonId: string;
     currentUser?: { id: string } | null;
+    instructorId: string;
 }
 
-export function CommentSection({ lessonId, currentUser }: CommentSectionProps) {
+export function CommentSection({ lessonId, currentUser, instructorId }: CommentSectionProps) {
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
@@ -116,6 +117,7 @@ export function CommentSection({ lessonId, currentUser }: CommentSectionProps) {
                     onReply={handleCreateComment}
                     onDelete={handleDeleteComment}
                     lessonId={lessonId}
+                    instructorId={instructorId}
                 />
             )}
         </div>

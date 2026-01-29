@@ -36,6 +36,7 @@ export interface ApiCourse {
 	whatYouWillLearn?: string[];
 	modules?: ApiModule[];
 	lessons?: ApiLesson[];
+	instructorId?: string;
 	instructor?: {
 		id: string;
 		name?: string;
@@ -149,8 +150,9 @@ export function transformCourse(apiCourse: ApiCourse): Course {
 			typeof metadata.updatedAt === "string"
 				? metadata.updatedAt
 				: new Date().toISOString(),
+		instructorId: apiCourse.instructorId ?? apiCourse.instructor?.id ?? "instructor",
 		instructor: {
-			id: apiCourse.instructor?.id ?? "instructor",
+			id: apiCourse.instructorId ?? apiCourse.instructor?.id ?? "instructor",
 			name:
 				apiCourse.instructor?.name ??
 				apiCourse.instructor?.full_name ??
@@ -611,12 +613,14 @@ export async function getCourseBySlug(
 	if (options?.preferLive) {
 		const liveCourse = await tryFetchCourseBySlug(slug);
 		if (liveCourse) {
+			console.log("Live course found:", liveCourse);
 			return liveCourse;
 		}
 	}
 
 	const apiCourse = await tryFetchCourseBySlug(slug);
 	if (apiCourse) {
+		console.log("Course found:", apiCourse);
 		return apiCourse;
 	}
 

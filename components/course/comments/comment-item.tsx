@@ -14,6 +14,7 @@ interface CommentItemProps {
   onReply: (data: { content: string; parentId?: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   lessonId: string;
+  instructorId: string;
 }
 
 export function CommentItem({
@@ -22,6 +23,7 @@ export function CommentItem({
   onReply,
   onDelete,
   lessonId,
+  instructorId,
 }: CommentItemProps) {
   const [isReplying, setIsReplying] = useState(false);
 
@@ -51,6 +53,11 @@ export function CommentItem({
                 <span className="font-semibold text-sm text-zinc-900">
                     {comment.user?.fullName || comment.user?.name || "Anonymous"}
                 </span>
+                {instructorId === comment.userId && (
+                    <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+                      Instructor
+                    </span>
+                )}
                 <span className="text-xs text-zinc-500">
                     {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                 </span>
@@ -103,6 +110,7 @@ export function CommentItem({
                         onReply={onReply}
                         onDelete={onDelete}
                         lessonId={lessonId}
+                        instructorId={instructorId}
                     />
                 ))}
             </div>

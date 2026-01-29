@@ -9,6 +9,7 @@ interface CommentListProps {
   onReply: (data: { content: string; parentId?: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   lessonId: string;
+  instructorId: string;
 }
 
 export function CommentList({
@@ -16,7 +17,8 @@ export function CommentList({
   currentUserId,
   onReply,
   onDelete,
-  lessonId
+  lessonId,
+  instructorId
 }: CommentListProps) {
   if (comments.length === 0) {
     return (
@@ -36,6 +38,7 @@ export function CommentList({
           onReply={onReply}
           onDelete={onDelete}
           lessonId={lessonId}
+          instructorId={instructorId}
         />
       ))}
     </div>

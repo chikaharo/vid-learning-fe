@@ -27,7 +27,12 @@ export function CourseLearningPanel({
 	enrollment,
 	onEnrollmentUpdate,
 }: CourseLearningPanelProps) {
+	const [currentUser, setCurrentUser] = useState<StoredUser | null>(null);
 	const [lessons, setLessons] = useState<Lesson[]>([]);
+
+	useEffect(() => {
+		setCurrentUser(getStoredUser());
+	}, []);
 	const [quizzes, setQuizzes] = useState<Quiz[]>([]);
 	const [activeQuizDetails, setActiveQuizDetails] = useState<Quiz | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -58,6 +63,7 @@ export function CourseLearningPanel({
 		setAnswers({});
 		setQuizSubmitted(false);
 		setTimeLeft(null);
+		console.log(course.instructor.id);
 	}, [activeItem?.id]);
 
 	useEffect(() => {
@@ -1002,6 +1008,14 @@ export function CourseLearningPanel({
 						>
 							{progressMessage.text}
 						</p>
+					)}
+
+					{currentLesson && (
+						<CommentSection 
+							lessonId={currentLesson.id} 
+							currentUser={currentUser}
+							instructorId={course.instructor.id}
+						/>
 					)}
 
 					{currentQuiz && !isQuizActive && (
