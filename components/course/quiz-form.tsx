@@ -60,6 +60,8 @@ export function QuizForm({
 						options: [
 							{ label: "", explanation: "", isCorrect: true },
 							{ label: "", explanation: "", isCorrect: false },
+							{ label: "", explanation: "", isCorrect: false },
+							{ label: "", explanation: "", isCorrect: false },
 						],
 					},
 			  ]
@@ -181,6 +183,8 @@ export function QuizForm({
 				points: "1",
 				options: [
 					{ label: "", explanation: "", isCorrect: true },
+					{ label: "", explanation: "", isCorrect: false },
+					{ label: "", explanation: "", isCorrect: false },
 					{ label: "", explanation: "", isCorrect: false },
 				],
 			},
