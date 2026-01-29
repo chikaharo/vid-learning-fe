@@ -181,7 +181,7 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
 					)}
 				</div>
 				<div className="mt-6 space-y-4">
-					<p className="text-3xl font-semibold text-zinc-900">{price}</p>
+					{/* <p className="text-3xl font-semibold text-zinc-900">{price}</p> */}
 					{status && (
 						<div
 							className={`rounded-2xl border px-4 py-2 text-xs ${
