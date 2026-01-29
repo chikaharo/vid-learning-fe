@@ -130,3 +130,20 @@ export interface Review {
 		email: string;
 	};
 }
+
+export interface Comment {
+	id: string;
+	content: string;
+	userId: string;
+	lessonId: string;
+	parentId?: string | null;
+	createdAt: string;
+	updatedAt: string;
+	user?: {
+		id: string;
+		fullName?: string;
+		name?: string;
+		avatarUrl?: string;
+	};
+	replies?: Comment[];
+}

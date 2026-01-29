@@ -10,8 +10,9 @@ import {
 	updateEnrollment,
 	startQuizAttempt,
 } from "@/lib/content-service";
-import { getStoredUser } from "@/lib/session";
+import { getStoredUser, StoredUser } from "@/lib/session";
 import type { Course, Enrollment, Lesson, Quiz } from "@/types/course";
+import { CommentSection } from "./comments/comment-section";
 
 interface CourseLearningPanelProps {
 	course: Course;
@@ -45,6 +46,11 @@ export function CourseLearningPanel({
 	const [quizSubmitted, setQuizSubmitted] = useState(false);
 	const [timeLeft, setTimeLeft] = useState<number | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [user, setUser] = useState<StoredUser | null>(null);
+
+	useEffect(() => {
+		setUser(getStoredUser());
+	}, []);
 
 	// Reset active quiz details when switching items
 	useEffect(() => {
