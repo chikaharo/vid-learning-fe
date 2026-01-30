@@ -718,13 +718,13 @@ export function CourseLearningPanel({
 													: "text-red-800"
 											}`}
 										>
-											{isReviewing
+											{isReviewing && Object.keys(answers).length === 0
 												? "Quiz Completed"
 												: quizScore && quizScore.percent >= 70
 												? "Quiz Passed!"
 												: "Quiz Failed"}
 										</h3>
-										{!isReviewing && quizScore && (
+										{(!isReviewing || Object.keys(answers).length > 0) && quizScore && (
 											<p
 												className={
 													quizScore.percent >= 70
