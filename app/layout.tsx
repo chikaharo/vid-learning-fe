@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 const siteUrl =
@@ -30,6 +31,7 @@ export default function RootLayout({
         <main className="mx-auto w-full max-w-6xl px-6 py-12 lg:px-8 lg:py-16">
           {children}
         </main>
+        <Toaster />
         <SiteFooter />
       </body>
     </html>

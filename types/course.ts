@@ -84,6 +84,7 @@ export interface Course {
 	thumbnailUrl?: string | null;
 	thumbnailColor: string;
 	updatedAt: string;
+	instructorId: string;
 	instructor: Instructor;
 	modules: CourseModule[];
 	lessons: Lesson[];
@@ -129,4 +130,21 @@ export interface Review {
 		name?: string;
 		email: string;
 	};
+}
+
+export interface Comment {
+	id: string;
+	content: string;
+	userId: string;
+	lessonId: string;
+	parentId?: string | null;
+	createdAt: string;
+	updatedAt: string;
+	user?: {
+		id: string;
+		fullName?: string;
+		name?: string;
+		avatarUrl?: string;
+	};
+	replies?: Comment[];
 }

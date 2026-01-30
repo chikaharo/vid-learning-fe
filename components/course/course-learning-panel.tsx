@@ -10,8 +10,9 @@ import {
 	updateEnrollment,
 	startQuizAttempt,
 } from "@/lib/content-service";
-import { getStoredUser } from "@/lib/session";
+import { getStoredUser, StoredUser } from "@/lib/session";
 import type { Course, Enrollment, Lesson, Quiz } from "@/types/course";
+import { CommentSection } from "./comments/comment-section";
 
 interface CourseLearningPanelProps {
 	course: Course;
@@ -26,7 +27,12 @@ export function CourseLearningPanel({
 	enrollment,
 	onEnrollmentUpdate,
 }: CourseLearningPanelProps) {
+	const [currentUser, setCurrentUser] = useState<StoredUser | null>(null);
 	const [lessons, setLessons] = useState<Lesson[]>([]);
+
+	useEffect(() => {
+		setCurrentUser(getStoredUser());
+	}, []);
 	const [quizzes, setQuizzes] = useState<Quiz[]>([]);
 	const [activeQuizDetails, setActiveQuizDetails] = useState<Quiz | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -45,6 +51,11 @@ export function CourseLearningPanel({
 	const [quizSubmitted, setQuizSubmitted] = useState(false);
 	const [timeLeft, setTimeLeft] = useState<number | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [user, setUser] = useState<StoredUser | null>(null);
+
+	useEffect(() => {
+		setUser(getStoredUser());
+	}, []);
 
 	// Reset active quiz details when switching items
 	useEffect(() => {
@@ -52,6 +63,7 @@ export function CourseLearningPanel({
 		setAnswers({});
 		setQuizSubmitted(false);
 		setTimeLeft(null);
+		console.log(course.instructor.id);
 	}, [activeItem?.id]);
 
 	useEffect(() => {
@@ -996,6 +1008,14 @@ export function CourseLearningPanel({
 						>
 							{progressMessage.text}
 						</p>
+					)}
+
+					{currentLesson && (
+						<CommentSection 
+							lessonId={currentLesson.id} 
+							currentUser={currentUser}
+							instructorId={course.instructor.id}
+						/>
 					)}
 
 					{currentQuiz && !isQuizActive && (
