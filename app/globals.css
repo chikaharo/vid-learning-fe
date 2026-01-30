@@ -1,13 +1,67 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f7f8;
-  --foreground: #0a0a0a;
+  /* Dark Theme Palette (Zinc) */
+  --background: #09090b; /* zinc-950 */
+  --foreground: #fafafa; /* zinc-50 */
+
+  --card: #09090b; /* zinc-950 */
+  --card-foreground: #fafafa; /* zinc-50 */
+
+  --popover: #09090b; /* zinc-950 */
+  --popover-foreground: #fafafa; /* zinc-50 */
+
+  --primary: #fafafa; /* zinc-50 */
+  --primary-foreground: #18181b; /* zinc-900 */
+
+  --secondary: #27272a; /* zinc-800 */
+  --secondary-foreground: #fafafa; /* zinc-50 */
+
+  --muted: #27272a; /* zinc-800 */
+  --muted-foreground: #a1a1aa; /* zinc-400 */
+
+  --accent: #27272a; /* zinc-800 */
+  --accent-foreground: #fafafa; /* zinc-50 */
+
+  --destructive: #7f1d1d; /* red-900 */
+  --destructive-foreground: #fafafa; /* zinc-50 */
+
+  --border: #27272a; /* zinc-800 */
+  --input: #27272a; /* zinc-800 */
+  --ring: #d4d4d8; /* zinc-300 */
+
+  --radius: 0.5rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
   --font-sans: "Inter", "Suisse Int'l", "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 }

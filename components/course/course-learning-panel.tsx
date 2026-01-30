@@ -433,15 +433,15 @@ export function CourseLearningPanel({
 
 	if (loading) {
 		return (
-			<section className="rounded-3xl border border-zinc-200 bg-white p-6">
-				<p className="text-sm text-zinc-500">Loading your coursework…</p>
+			<section className="rounded-3xl border border-border bg-card p-6">
+				<p className="text-sm text-muted-foreground">Loading your coursework…</p>
 			</section>
 		);
 	}
 
 	if (error) {
 		return (
-			<section className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+			<section className="rounded-3xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive">
 				{error}
 			</section>
 		);
@@ -454,17 +454,17 @@ export function CourseLearningPanel({
 	};
 
 	return (
-		<div className="rounded-3xl border border-zinc-200 bg-white shadow-sm">
+		<div className="rounded-3xl border border-border bg-card shadow-sm">
 			<div className="grid min-h-[600px] grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)]">
-				<aside className="flex flex-col border-b border-zinc-100 lg:border-b-0 lg:border-r">
-					<div className="border-b border-zinc-100 px-5 py-4">
-						<p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+				<aside className="flex flex-col border-b border-border lg:border-b-0 lg:border-r">
+					<div className="border-b border-border px-5 py-4">
+						<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 							{course.level} course
 						</p>
-						<h2 className="text-lg font-semibold text-zinc-900">
+						<h2 className="text-lg font-semibold text-card-foreground">
 							{course.title}
 						</h2>
-						<p className="text-xs text-zinc-500">
+						<p className="text-xs text-muted-foreground">
 							{lessons.length} lessons · {course.durationMinutes} minutes
 						</p>
 						<div className="mt-4">
@@ -473,14 +473,14 @@ export function CourseLearningPanel({
 								placeholder="Search content..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
-								className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none transition focus:border-zinc-400 focus:bg-white"
+								className="w-full rounded-xl border border-border bg-muted px-3 py-2 text-sm outline-none transition focus:border-ring focus:bg-background text-foreground placeholder:text-muted-foreground"
 							/>
 						</div>
 					</div>
 					<div className="flex-1 overflow-y-auto px-4 py-4">
 						{filteredCurriculumGroups.map((group) => (
-							<details key={group.id} open className="group mb-4">
-								<summary className="flex cursor-pointer list-none items-center justify-between px-2 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 outline-none hover:text-zinc-700">
+						<details key={group.id} open className="group mb-4">
+								<summary className="flex cursor-pointer list-none items-center justify-between px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground outline-none hover:text-foreground">
 									{group.title}
 									<ChevronDownIcon className="h-4 w-4 transition-transform duration-300 group-open:rotate-180" />
 								</summary>
@@ -503,11 +503,11 @@ export function CourseLearningPanel({
 														}}
 														className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${
 															isActive
-																? "bg-rose-50 text-rose-600"
-																: "text-zinc-700 hover:bg-zinc-100"
+																? "bg-rose-500/10 text-rose-500"
+																: "text-muted-foreground hover:bg-muted hover:text-foreground"
 														}`}
 													>
-														<span className="text-xs font-semibold text-zinc-400">
+														<span className={`text-xs font-semibold ${isActive ? "text-rose-500" : "text-muted-foreground"}`}>
 															L{index + 1}
 														</span>
 														<div className="flex-1">
@@ -519,7 +519,7 @@ export function CourseLearningPanel({
 																	</div>
 																)}
 															</div>
-															<p className="text-xs text-zinc-500">
+															<p className="text-xs opacity-70">
 																Video · {lesson.durationMinutes ?? 0} mins
 															</p>
 														</div>
@@ -543,11 +543,11 @@ export function CourseLearningPanel({
 													}}
 													className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${
 														isActive
-															? "bg-sky-50 text-sky-700"
-															: "text-zinc-700 hover:bg-zinc-100"
+															? "bg-sky-500/10 text-sky-500"
+															: "text-muted-foreground hover:bg-muted hover:text-foreground"
 													}`}
 												>
-													<span className="text-xs font-semibold text-zinc-400">
+													<span className={`text-xs font-semibold ${isActive ? "text-sky-500" : "text-muted-foreground"}`}>
 														Q
 													</span>
 													<div className="flex-1">
@@ -559,7 +559,7 @@ export function CourseLearningPanel({
 																</div>
 															)}
 														</div>
-														<p className="text-xs text-zinc-500">
+														<p className="text-xs opacity-70">
 															{quiz.timeLimitSeconds
 																? `${Math.round(
 																		quiz.timeLimitSeconds / 60
@@ -572,7 +572,7 @@ export function CourseLearningPanel({
 										);
 									})}
 									{group.items.length === 0 && (
-										<li className="px-3 py-2 text-xs text-zinc-500">
+										<li className="px-3 py-2 text-xs text-muted-foreground">
 											No content yet.
 										</li>
 									)}
@@ -580,40 +580,40 @@ export function CourseLearningPanel({
 							</details>
 						))}
 						{totalItemsCount > 0 && (
-							<div className="mt-5 rounded-2xl border border-zinc-200 bg-white/80 p-3 text-xs text-zinc-600">
-								<div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+							<div className="mt-5 rounded-2xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+								<div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
 									<span>Learning progress</span>
 									<span>{learningProgressPercent}%</span>
 								</div>
-								<div className="mt-2 h-2 rounded-full bg-zinc-100">
+								<div className="mt-2 h-2 rounded-full bg-secondary">
 									<div
-										className="h-full rounded-full bg-rose-500 transition-all"
+										className="h-full rounded-full bg-primary transition-all"
 										style={{ width: `${learningProgressPercent}%` }}
 									/>
 								</div>
-								<p className="mt-1 text-[11px] text-zinc-500">
+								<p className="mt-1 text-[11px] text-muted-foreground">
 									{completedItemsCount}/{totalItemsCount} items completed
 								</p>
 							</div>
 						)}
 					</div>
-					<div className="border-t border-zinc-100 px-4 py-4">
-						<button className="flex w-full items-center justify-between rounded-2xl border border-zinc-200 px-3 py-2 text-left text-sm text-zinc-700 transition hover:border-zinc-900">
+					<div className="border-t border-border px-4 py-4">
+						<button className="flex w-full items-center justify-between rounded-2xl border border-border px-3 py-2 text-left text-sm text-foreground transition hover:border-foreground">
 							<span>Accomplishment</span>
-							<span className="text-xs font-semibold text-violet-600">
+							<span className="text-xs font-semibold text-primary">
 								Soon
 							</span>
 						</button>
 					</div>
 				</aside>
-				<section className="flex flex-col bg-zinc-50/60 p-4 lg:p-8">
+				<section className="flex flex-col bg-muted/30 p-4 lg:p-8">
 					<div
-						className={`flex-1 rounded-2xl border border-zinc-200 bg-black/80 p-4 shadow-inner ${
-							isQuizActive ? "bg-white overflow-y-auto" : ""
+						className={`flex-1 rounded-2xl border border-border bg-black/80 p-4 shadow-inner ${
+							isQuizActive ? "bg-card overflow-y-auto" : ""
 						}`}
 					>
 						{currentLesson && activeItem?.type === "lesson" ? (
-							<div className="flex h-full flex-col rounded-xl border border-black/30 bg-gradient-to-br from-zinc-900 via-zinc-900 to-black p-6 text-white">
+							<div className="flex h-full flex-col rounded-xl border border-border bg-gradient-to-br from-zinc-900 via-zinc-900 to-black p-6 text-white">
 								<div>
 									<p className="text-sm text-rose-200">Now playing</p>
 									<h3 className="mt-1 text-2xl font-semibold">
@@ -671,22 +671,22 @@ export function CourseLearningPanel({
 								</div>
 							</div>
 						) : isQuizActive ? (
-							<div className="h-full space-y-6 bg-white p-4">
-								<div className="flex items-center justify-between border-b border-zinc-100 pb-4">
+							<div className="h-full space-y-6 bg-card p-4">
+								<div className="flex items-center justify-between border-b border-border pb-4">
 									<div>
 										<div className="flex items-center gap-3">
-											<h2 className="text-2xl font-bold text-zinc-900">
+											<h2 className="text-2xl font-bold text-card-foreground">
 												{activeQuizDetails?.title}
 											</h2>
 											<span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${
 												activeQuizDetails?.type === 'TEST' 
-													? 'bg-rose-100 text-rose-700' 
-													: 'bg-emerald-100 text-emerald-700'
+													? 'bg-rose-500/10 text-rose-500' 
+													: 'bg-emerald-500/10 text-emerald-500'
 											}`}>
 												{activeQuizDetails?.type === 'TEST' ? 'Exam Mode' : 'Practice Mode'}
 											</span>
 										</div>
-										<p className="text-sm text-zinc-600">
+										<p className="text-sm text-muted-foreground">
 											{activeQuizDetails?.description}
 										</p>
 									</div>
@@ -694,8 +694,8 @@ export function CourseLearningPanel({
 										<div
 											className={`flex items-center gap-1 rounded-full px-3 py-1 font-mono text-sm font-semibold ${
 												timeLeft < 60
-													? "bg-red-50 text-red-600"
-													: "bg-zinc-100 text-zinc-700"
+													? "bg-red-500/10 text-red-500"
+													: "bg-muted text-foreground"
 											}`}
 										>
 											<span>{formatTime(timeLeft)}</span>
@@ -707,29 +707,29 @@ export function CourseLearningPanel({
 									<div
 										className={`rounded-2xl border p-4 ${
 											isReviewing || (quizScore && quizScore.percent >= 70)
-												? "border-emerald-200 bg-emerald-50"
-												: "border-red-200 bg-red-50"
+												? "border-emerald-500/20 bg-emerald-500/10"
+												: "border-red-500/20 bg-red-500/10"
 										}`}
 									>
 										<h3
 											className={`text-lg font-bold ${
 												isReviewing || (quizScore && quizScore.percent >= 70)
-													? "text-emerald-800"
-													: "text-red-800"
+													? "text-emerald-500"
+													: "text-red-500"
 											}`}
 										>
-											{isReviewing
+											{isReviewing && Object.keys(answers).length === 0
 												? "Quiz Completed"
 												: quizScore && quizScore.percent >= 70
 												? "Quiz Passed!"
 												: "Quiz Failed"}
 										</h3>
-										{!isReviewing && quizScore && (
+										{(!isReviewing || Object.keys(answers).length > 0) && quizScore && (
 											<p
 												className={
 													quizScore.percent >= 70
-														? "text-emerald-700"
-														: "text-red-700"
+														? "text-emerald-500"
+														: "text-red-500"
 												}
 											>
 												You scored {quizScore.correct} out of {quizScore.total}{" "}
@@ -737,7 +737,7 @@ export function CourseLearningPanel({
 											</p>
 										)}
 										{isReviewing && (
-											<p className="text-emerald-700">
+											<p className="text-emerald-500">
 												Reviewing correct answers.
 											</p>
 										)}
@@ -758,11 +758,11 @@ export function CourseLearningPanel({
 										return (
 											<div key={question.id} className="space-y-3">
 												<div className="flex items-start gap-2">
-													<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-600">
+													<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
 														{index + 1}
 													</span>
 													<div className="flex-1">
-														<p className="font-medium text-zinc-900">
+														<p className="font-medium text-foreground">
 															{question.prompt}
 														</p>
 														<div className="mt-3 space-y-2">
@@ -771,7 +771,7 @@ export function CourseLearningPanel({
 																	selectedOptionId === option.id;
 																const isCorrect = option.isCorrect;
 																let optionClass =
-																	"border-zinc-200 text-zinc-700 hover:bg-zinc-50";
+																	"border-border text-muted-foreground hover:bg-muted/50";
 																if (quizSubmitted) {
 																	if (
 																		isReviewing ||
@@ -779,22 +779,22 @@ export function CourseLearningPanel({
 																	) {
 																		if (isCorrect) {
 																			optionClass =
-																				"border-emerald-500 bg-emerald-50 text-emerald-700";
+																				"border-emerald-500/50 bg-emerald-500/10 text-emerald-500";
 																		} else if (isSelected && !isCorrect) {
 																			optionClass =
-																				"border-red-500 bg-red-50 text-red-700";
+																				"border-red-500/50 bg-red-500/10 text-red-500";
 																		} else {
 																			optionClass =
-																				"border-zinc-200 text-zinc-400 opacity-60";
+																				"border-border text-muted-foreground opacity-50";
 																		}
 																	} else {
 																		// Failed state: highlight selected, don't show correct
 																		if (isSelected) {
 																			optionClass =
-																				"border-zinc-900 bg-zinc-100 text-zinc-900";
+																				"border-foreground bg-muted text-foreground";
 																		} else {
 																			optionClass =
-																				"border-zinc-200 text-zinc-400 opacity-60";
+																				"border-border text-muted-foreground opacity-50";
 																		}
 																	}
 																} else if (isSelected) {
