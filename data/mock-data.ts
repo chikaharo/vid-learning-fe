@@ -100,6 +100,7 @@ const createCourse = ({
 		thumbnailUrl: thumbnailUrl ?? null,
 		thumbnailColor,
 		updatedAt: "2025-01-04T00:00:00.000Z",
+		instructorId,
 		instructor,
 		highlights: sharedHighlights,
 		whatYouWillLearn: sharedWhatYouWillLearn,
