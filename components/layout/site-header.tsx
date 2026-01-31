@@ -79,95 +79,95 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-zinc-200/70 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 lg:px-8">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-sm uppercase tracking-widest text-white">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm uppercase tracking-widest text-primary-foreground">
             VU
           </span>
           <div className="flex flex-col leading-tight">
             <span>Video</span>
-            <span className="text-xs text-zinc-500">University</span>
+            <span className="text-xs text-muted-foreground">University</span>
           </div>
         </Link>
         <form
           onSubmit={handleSearch}
           className="hidden md:flex flex-1 max-w-md mx-8"
         >
-          <div className="relative w-full text-zinc-500 focus-within:text-zinc-900">
+          <div className="relative w-full text-muted-foreground focus-within:text-foreground">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <MagnifyingGlassIcon className="h-5 w-5" aria-hidden="true" />
             </div>
             <input
               name="search"
               id="search"
-              className="block w-full rounded-full border border-zinc-200 bg-zinc-50 py-2 pl-10 pr-3 text-sm placeholder-zinc-500 focus:border-zinc-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:text-sm"
+              className="block w-full rounded-full border border-border bg-muted py-2 pl-10 pr-3 text-sm placeholder-muted-foreground focus:border-ring focus:bg-background focus:outline-none focus:ring-1 focus:ring-ring sm:text-sm"
               placeholder="Search courses..."
               type="search"
             />
           </div>
         </form>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-zinc-600 md:flex">
-          {navigation.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="transition hover:text-zinc-900"
-            >
-              {item.label}
-            </Link>
-          ))}
-          {user && user.role === 'ADMIN' && (
-            <Link
-              href="/admin/dashboard"
-              className="transition hover:text-zinc-900"
-            >
-              Admin Portal
-            </Link>
-          )}
-          {user ? (
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-xs uppercase tracking-wide text-zinc-400">
-                  Signed in
-                </p>
-                <p className="font-semibold text-zinc-900">
-                  {user.fullName ?? user.name ?? user.email}
-                </p>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+            {navigation.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="transition hover:text-foreground"
+              >
+                {item.label}
+              </Link>
+            ))}
+            {user && user.role === 'ADMIN' && (
+              <Link
+                href="/admin/dashboard"
+                className="transition hover:text-foreground"
+              >
+                Admin Portal
+              </Link>
+            )}
+            {user ? (
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Signed in
+                  </p>
+                  <p className="font-semibold text-foreground">
+                    {user.fullName ?? user.name ?? user.email}
+                  </p>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-foreground"
+                >
+                  Log out
+                </button>
               </div>
-              <button
-                onClick={handleSignOut}
-                className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-900"
-              >
-                Log out
-              </button>
-            </div>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="transition hover:text-zinc-900"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-full bg-zinc-900 px-4 py-2 text-white transition hover:bg-zinc-800"
-              >
-                Sign up
-              </Link>
-            </>
-          )}
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="transition hover:text-foreground"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-full bg-primary px-4 py-2 text-primary-foreground transition hover:bg-primary/90"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
         </nav>
         <div className="flex items-center gap-3 md:hidden">
           {user ? (
             <>
-              <span className="text-sm font-semibold text-zinc-900">
+              <span className="text-sm font-semibold text-foreground">
                 {user.fullName ?? user.email}
               </span>
               <button
                 onClick={handleSignOut}
-                className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium"
+                className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground"
               >
                 Log out
               </button>
@@ -175,7 +175,7 @@ export function SiteHeader() {
           ) : (
             <Link
               href="/login"
-              className="rounded-full border border-zinc-200 px-4 py-1.5 text-sm font-medium"
+              className="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-foreground"
             >
               Log in
             </Link>

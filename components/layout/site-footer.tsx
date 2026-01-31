@@ -1,14 +1,14 @@
 export function SiteFooter() {
   return (
-    <footer className="border-t border-zinc-200 bg-white">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-10 text-sm text-zinc-600 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+    <footer className="border-t border-border bg-background">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-10 text-sm text-muted-foreground lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <p>© {new Date().getFullYear()} Video Learning. Built with Next.js.</p>
         <div className="flex gap-4">
           <a
             href="https://nextjs.org/"
             target="_blank"
             rel="noreferrer"
-            className="transition hover:text-zinc-900"
+            className="transition hover:text-foreground"
           >
             Next.js
           </a>
@@ -16,7 +16,7 @@ export function SiteFooter() {
             href="https://tailwindcss.com/"
             target="_blank"
             rel="noreferrer"
-            className="transition hover:text-zinc-900"
+            className="transition hover:text-foreground"
           >
             Tailwind CSS
           </a>
@@ -24,7 +24,7 @@ export function SiteFooter() {
             href="https://github.com/"
             target="_blank"
             rel="noreferrer"
-            className="transition hover:text-zinc-900"
+            className="transition hover:text-foreground"
           >
             GitHub
           </a>
